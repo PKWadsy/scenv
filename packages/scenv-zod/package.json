@@ -1,9 +1,9 @@
 {
-  "name": "senv-zod",
-  "version": "0.1.0",
-  "description": "Zod validator for senv variables",
+  "name": "scenv-zod",
+  "version": "0.1.1",
+  "description": "Zod validator for scenv variables",
   "repository": { "type": "git", "url": "git+https://github.com/PKWadsy/senv.git" },
-  "keywords": ["senv", "zod", "validation"],
+  "keywords": ["scenv", "zod", "validation"],
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -20,11 +20,11 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --clean"
   },
   "peerDependencies": {
-    "senv": "workspace:*",
+    "scenv": "workspace:*",
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "senv": "workspace:*",
+    "scenv": "workspace:*",
     "zod": "^3.22.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0"

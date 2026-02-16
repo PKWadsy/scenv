@@ -1,23 +1,23 @@
-# senv
+# scenv
 
-**Where did that config come from?** Env vars? A file? Something you typed last time? Senv sorts it out. ✨
+**Where did that config come from?** Env vars? A file? Something you typed last time? Scenv sorts it out. ✨
 
-Senv is a small **library** that gives you one clear way to define “this app needs an API URL, a port, a feature flag…” and then figures out the value at runtime: from CLI overrides, environment variables, **context files** (think per-environment or per-run JSON), or a default. You don’t bake “always use env” or “never prompt” into each variable—you control that with config (file, env, or whatever your app passes in). So the same codebase can be strict in CI, interactive in dev, and override-friendly from the command line.
+Scenv is a small **library** that gives you one clear way to define “this app needs an API URL, a port, a feature flag…” and then figures out the value at runtime: from CLI overrides, environment variables, **context files** (think per-environment or per-run JSON), or a default. You don’t bake “always use env” or “never prompt” into each variable—you control that with config (file, env, or whatever your app passes in). So the same codebase can be strict in CI, interactive in dev, and override-friendly from the command line.
 
-No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `senv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/senv-zod) for validation and [Inquirer](packages/senv-inquirer) for prompts. One API, many sources—no more “is this from .env or a flag?” detective work.
+No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `senv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/scenv-zod) for validation and [Inquirer](packages/scenv-inquirer) for prompts. One API, many sources—no more “is this from .env or a flag?” detective work.
 
 ---
 
 ## Quick start
 
 ```bash
-pnpm add senv
-# optional: pnpm add senv-zod zod  # for validation
-# optional: pnpm add senv-inquirer inquirer  # for interactive prompts
+pnpm add scenv
+# optional: pnpm add scenv-zod zod  # for validation
+# optional: pnpm add scenv-inquirer inquirer  # for interactive prompts
 ```
 
 ```ts
-import { configure, parseSenvArgs, senv } from "senv";
+import { configure, parseSenvArgs, senv } from "scenv";
 
 // Optional: apply CLI flags (--set, --context, --prompt, etc.)
 configure(parseSenvArgs(process.argv.slice(2)));
@@ -55,7 +55,7 @@ await api_url.save();                   // write current value to a context file
 | [**Resolution**](docs/RESOLUTION.md) | Resolution order, prompt modes (`always` / `never` / `fallback` / `no-env`), validation. |
 | [**Saving**](docs/SAVING.md) | `variable.save()`, `savePrompt`, `saveContextTo`, callbacks. |
 | [**API reference**](docs/API.md) | `senv()`, `configure`, `loadConfig`, `parseSenvArgs`, types. |
-| [**Integration**](docs/INTEGRATION.md) | CLI integration, senv-zod, senv-inquirer. |
+| [**Integration**](docs/INTEGRATION.md) | CLI integration, scenv-zod, scenv-inquirer. |
 
 ---
 
@@ -76,9 +76,9 @@ Prompting (when to ask the user) is controlled by config `prompt`: `always` | `n
 
 | Package | Purpose |
 |--------|--------|
-| **senv** | Core: config, context discovery, variables, `get` / `safeGet` / `save`. |
-| **senv-zod** | `validator(zodSchema)` for type-safe validation and coercion. |
-| **senv-inquirer** | `prompt()` for the variable `prompt` option (great for interactive dev). |
+| **scenv** | Core: config, context discovery, variables, `get` / `safeGet` / `save`. |
+| **scenv-zod** | `validator(zodSchema)` for type-safe validation and coercion. |
+| **scenv-inquirer** | `prompt()` for the variable `prompt` option (great for interactive dev). |
 
 ---
 

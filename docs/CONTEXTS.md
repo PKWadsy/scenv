@@ -51,7 +51,7 @@ If you change the list to `["overlay", "base"]`, then base is applied after over
 You can use it yourself to inspect where context files were found:
 
 ```ts
-import { loadConfig, discoverContextPaths } from "senv";
+import { loadConfig, discoverContextPaths } from "scenv";
 
 const config = loadConfig();
 const root = config.root ?? process.cwd();

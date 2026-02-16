@@ -19,8 +19,8 @@ import {
   senv,
   getContextValues,
   discoverContextPaths,
-} from "senv";
-import { validator } from "senv-zod";
+} from "scenv";
+import { validator } from "scenv-zod";
 import { z } from "zod";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";

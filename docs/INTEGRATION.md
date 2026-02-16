@@ -2,10 +2,10 @@
 
 ## CLI integration
 
-Senv does not parse `process.argv` itself. Your app should parse CLI arguments and pass the result to `configure()`. Use **`parseSenvArgs()`** for the flags senv understands:
+Scenv does not parse `process.argv` itself. Your app should parse CLI arguments and pass the result to `configure()`. Use **`parseSenvArgs()`** for the flags scenv understands:
 
 ```ts
-import { configure, parseSenvArgs } from "senv";
+import { configure, parseSenvArgs } from "scenv";
 
 // Pass everything after the script name (or your app name).
 configure(parseSenvArgs(process.argv.slice(2)));
@@ -15,13 +15,13 @@ If you use a CLI framework (e.g. yargs, commander), you can map its options to t
 
 ---
 
-## senv-zod
+## scenv-zod
 
-**senv-zod** provides a validator that uses Zod schemas. Values from set/env/context are strings; use `z.coerce.number()`, `z.coerce.boolean()`, etc., to parse them.
+**scenv-zod** provides a validator that uses Zod schemas. Values from set/env/context are strings; use `z.coerce.number()`, `z.coerce.boolean()`, etc., to parse them.
 
 ```ts
-import { senv } from "senv";
-import { validator } from "senv-zod";
+import { senv } from "scenv";
+import { validator } from "scenv-zod";
 import { z } from "zod";
 
 const port = senv("Port", {
@@ -41,17 +41,17 @@ const debug = senv("Debug", {
 });
 ```
 
-Install: `pnpm add senv senv-zod zod`.
+Install: `pnpm add scenv scenv-zod zod`.
 
 ---
 
-## senv-inquirer
+## scenv-inquirer
 
-**senv-inquirer** provides a `prompt()` that returns a function suitable for the variable `prompt` option. Senv calls that function with `(name, defaultValue)` when it needs to prompt; you do not pass the name or default yourself.
+**scenv-inquirer** provides a `prompt()` that returns a function suitable for the variable `prompt` option. Scenv calls that function with `(name, defaultValue)` when it needs to prompt; you do not pass the name or default yourself.
 
 ```ts
-import { senv } from "senv";
-import { prompt } from "senv-inquirer";
+import { senv } from "scenv";
+import { prompt } from "scenv-inquirer";
 
 const api_url = senv("API URL", {
   default: "http://localhost:4000",
@@ -59,7 +59,23 @@ const api_url = senv("API URL", {
 });
 ```
 
-Install: `pnpm add senv senv-inquirer inquirer`.
+Install: `pnpm add scenv scenv-inquirer inquirer`.
+
+### Using scenv-inquirer for save and context prompts
+
+When `savePrompt` is `"ask"` or `saveContextTo` is `"ask"`, scenv calls optional callbacks (`onAskSaveAfterPrompt`, `onAskContext`). You can wire inquirer-based implementations in one go with **`callbacks()`**:
+
+```ts
+import { configure } from "scenv";
+import { prompt, callbacks } from "scenv-inquirer";
+
+// Wire both save-after-prompt and ask-context via inquirer
+configure(callbacks());
+// Or merge with other config:
+configure({ ...yourConfig, ...callbacks() });
+```
+
+Then `SENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` will prompt the user interactively (save for next time? which context?). You can also wire a single callback: `configure({ callbacks: { onAskSaveAfterPrompt: askSaveAfterPrompt() } })` using the exported `askSaveAfterPrompt` and `askContext` helpers.
 
 ---
 

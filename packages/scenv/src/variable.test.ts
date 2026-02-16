@@ -138,6 +138,34 @@ describe("variable", () => {
     expect(value).toBe("fallback-typed");
   });
 
+  it("get() prompts when prompt mode fallback and only default exists (no set/env/context)", async () => {
+    configure({ prompt: "fallback" });
+    const v = senv("Core Server URL", {
+      key: "core_server_url",
+      env: "CORE_SERVER_URL",
+      default: "http://localhost:3000",
+      prompt: () => "prompted-value",
+    });
+    const value = await v.get();
+    expect(value).toBe("prompted-value");
+  });
+
+  it("get() does not prompt when prompt mode fallback and value from env", async () => {
+    configure({ prompt: "fallback", ignoreEnv: false });
+    process.env.CORE_SERVER_URL = "https://env.example.com";
+    const v = senv("Core Server URL", {
+      key: "core_server_url",
+      env: "CORE_SERVER_URL",
+      default: "http://localhost:3000",
+      prompt: () => {
+        throw new Error("prompt should not be called when value from env");
+      },
+    });
+    const value = await v.get();
+    expect(value).toBe("https://env.example.com");
+    delete process.env.CORE_SERVER_URL;
+  });
+
   it("get() calls onAskSaveAfterPrompt when prompted and savePrompt is ask", async () => {
     configure({
       prompt: "always",

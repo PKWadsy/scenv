@@ -7,7 +7,7 @@
     "start:overlay-first": "tsx index.ts -- --context overlay,base"
   },
   "dependencies": {
-    "senv": "workspace:*"
+    "scenv": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0"

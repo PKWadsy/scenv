@@ -7,7 +7,7 @@
     "start:with-args": "tsx index.ts --prompt never --set api_url=https://cli.example.com"
   },
   "dependencies": {
-    "senv": "workspace:*"
+    "scenv": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0"

@@ -6,7 +6,7 @@
     "start": "tsx index.ts"
   },
   "dependencies": {
-    "senv": "workspace:*"
+    "scenv": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.0"

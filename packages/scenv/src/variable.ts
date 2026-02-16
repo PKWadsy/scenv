@@ -67,9 +67,6 @@ export function senv<T>(
       const ctx = getContextValues();
       if (ctx[key] !== undefined) return ctx[key];
     }
-    if (defaultValue !== undefined) {
-      return String(defaultValue);
-    }
     return undefined;
   }
 

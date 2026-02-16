@@ -8,7 +8,7 @@
  * Override with env:
  *   SENV_PROMPT=never SENV_ADD_CONTEXTS=extra pnpm start
  */
-import { loadConfig, senv } from "senv";
+import { loadConfig, senv } from "scenv";
 
 async function main() {
   const config = loadConfig();

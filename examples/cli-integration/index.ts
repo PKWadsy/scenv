@@ -7,7 +7,7 @@
  *   pnpm start:with-args
  *   pnpm start -- --context prod --set api_url=https://api.prod.com
  */
-import { configure, parseSenvArgs, senv } from "senv";
+import { configure, parseSenvArgs, senv } from "scenv";
 
 // Pass through CLI args (e.g. process.argv.slice(2) from your app)
 configure(parseSenvArgs(process.argv.slice(2)));

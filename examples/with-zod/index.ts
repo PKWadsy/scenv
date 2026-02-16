@@ -1,13 +1,13 @@
 /**
- * Using senv with senv-zod for validation. Values from env/context are strings;
+ * Using scenv with scenv-zod for validation. Values from env/context are strings;
  * z.coerce.number() (or similar) parses them.
  *
  * Run:
  *   pnpm install && pnpm start
  *   PORT=3001 pnpm start
  */
-import { senv } from "senv";
-import { validator } from "senv-zod";
+import { senv } from "scenv";
+import { validator } from "scenv-zod";
 import { z } from "zod";
 
 const port = senv("Port", {

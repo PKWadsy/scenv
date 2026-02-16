@@ -1,4 +1,4 @@
-# Senv examples
+# Scenv examples
 
 See the [main documentation](../README.md) and [docs/](../docs/) for configuration, contexts, resolution, and API.
 
@@ -15,7 +15,7 @@ cd examples/<name> && pnpm start
 | Example | What it shows |
 |--------|----------------|
 | **basic** | Simple variable, default + env, `get()` and `safeGet()`. |
-| **with-zod** | Validation with `senv-zod` and Zod (port number, boolean). |
+| **with-zod** | Validation with `scenv-zod` and Zod (port number, boolean). |
 | **cli-integration** | `parseSenvArgs(process.argv)` + `configure()` so `--set`, `--prompt`, `--context` apply. |
 | **full-demo** | Config file, context discovery, merged context values, resolution order, validation, `safeGet()` failure, optional save to context. Multiple npm scripts for different scenarios. |
 | **contexts** | Context merge order: `base` then `overlay`; later overwrites earlier. Try `pnpm run start:overlay-first` for `--context overlay,base` (base wins where both set). |

@@ -6,8 +6,8 @@
     "start": "tsx index.ts"
   },
   "dependencies": {
-    "senv": "workspace:*",
-    "senv-zod": "workspace:*",
+    "scenv": "workspace:*",
+    "scenv-zod": "workspace:*",
     "zod": "^3.22.0"
   },
   "devDependencies": {

@@ -71,7 +71,7 @@ export SENV_IGNORE_ENV=1
 Call `configure(partial)` to overlay config (and optionally callbacks) that take precedence over env and file. Typical use: parse your CLI and pass the result in.
 
 ```ts
-import { configure, parseSenvArgs } from "senv";
+import { configure, parseSenvArgs } from "scenv";
 
 configure(parseSenvArgs(process.argv.slice(2)));
 ```

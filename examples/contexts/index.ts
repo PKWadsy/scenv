@@ -6,7 +6,7 @@
  *   cd examples/contexts && pnpm start
  *   pnpm start -- --context overlay,base   (swap order: base wins where both set)
  */
-import { configure, parseSenvArgs, loadConfig, senv, getContextValues } from "senv";
+import { configure, parseSenvArgs, loadConfig, senv, getContextValues } from "scenv";
 
 configure(parseSenvArgs(process.argv.slice(2)));
 

@@ -14,9 +14,9 @@ importers:
 
   examples/basic:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
+        version: link:../../packages/scenv
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -24,9 +24,9 @@ importers:
 
   examples/cli-integration:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
+        version: link:../../packages/scenv
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -34,9 +34,9 @@ importers:
 
   examples/contexts:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
+        version: link:../../packages/scenv
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -44,12 +44,12 @@ importers:
 
   examples/full-demo:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
-      senv-zod:
+        version: link:../../packages/scenv
+      scenv-zod:
         specifier: workspace:*
-        version: link:../../packages/senv-zod
+        version: link:../../packages/scenv-zod
       zod:
         specifier: ^3.22.0
         version: 3.25.76
@@ -60,9 +60,9 @@ importers:
 
   examples/save-flow:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
+        version: link:../../packages/scenv
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -70,9 +70,9 @@ importers:
 
   examples/with-config-file:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
+        version: link:../../packages/scenv
     devDependencies:
       tsx:
         specifier: ^4.19.0
@@ -80,12 +80,12 @@ importers:
 
   examples/with-zod:
     dependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../../packages/senv
-      senv-zod:
+        version: link:../../packages/scenv
+      scenv-zod:
         specifier: workspace:*
-        version: link:../../packages/senv-zod
+        version: link:../../packages/scenv-zod
       zod:
         specifier: ^3.22.0
         version: 3.25.76
@@ -94,7 +94,7 @@ importers:
         specifier: ^4.19.0
         version: 4.21.0
 
-  packages/senv:
+  packages/scenv:
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -112,7 +112,7 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.33)
 
-  packages/senv-inquirer:
+  packages/scenv-inquirer:
     devDependencies:
       '@types/inquirer':
         specifier: ^8.2.0
@@ -120,9 +120,9 @@ importers:
       inquirer:
         specifier: ^9.2.0
         version: 9.3.8(@types/node@20.19.33)
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../senv
+        version: link:../scenv
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)
@@ -130,11 +130,11 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
-  packages/senv-zod:
+  packages/scenv-zod:
     devDependencies:
-      senv:
+      scenv:
         specifier: workspace:*
-        version: link:../senv
+        version: link:../scenv
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)

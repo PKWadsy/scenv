@@ -6,7 +6,7 @@
  *   pnpm install && pnpm start
  *   CORE_SERVER_URL=https://prod.example.com pnpm start
  */
-import { senv } from "senv";
+import { senv } from "scenv";
 
 const core_server_url = senv("Core Server URL", {
   key: "core_server_url",
