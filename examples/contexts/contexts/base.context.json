@@ -1,0 +1,5 @@
+{
+  "database_url": "postgres://localhost/base",
+  "cache_ttl": "60",
+  "region": "us-east-1"
+}

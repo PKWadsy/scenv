@@ -1,0 +1,8 @@
+{
+  "contexts": ["app"],
+  "prompt": "fallback",
+  "ignoreEnv": false,
+  "ignoreContext": false,
+  "savePrompt": "ask",
+  "saveContextTo": "app"
+}

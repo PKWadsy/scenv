@@ -1,0 +1,22 @@
+{
+  "name": "example-full-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts",
+    "demo:default": "tsx index.ts",
+    "demo:cli-set": "tsx index.ts -- --set api_url=https://cli-set.example.com --set port=9090",
+    "demo:env": "API_URL=https://env.example.com PORT=4000 tsx index.ts",
+    "demo:contexts": "tsx index.ts -- --context dev,prod",
+    "demo:ignore-env": "API_URL=https://ignored.com tsx index.ts -- --ignore-env",
+    "demo:save": "tsx index.ts -- --save-context-to my-saves"
+  },
+  "dependencies": {
+    "senv": "workspace:*",
+    "senv-zod": "workspace:*",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "api_url": "https://dev-api.example.com",
+  "log_level": "debug",
+  "port": "3000"
+}

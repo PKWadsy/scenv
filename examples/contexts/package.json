@@ -1,0 +1,15 @@
+{
+  "name": "example-contexts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts",
+    "start:overlay-first": "tsx index.ts -- --context overlay,base"
+  },
+  "dependencies": {
+    "senv": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

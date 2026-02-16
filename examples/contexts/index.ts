@@ -1,0 +1,53 @@
+/**
+ * Context merge order: later context overwrites earlier for the same key.
+ * Base has database_url, cache_ttl, region. Overlay overrides database_url and cache_ttl, adds debug.
+ *
+ * Run:
+ *   cd examples/contexts && pnpm start
+ *   pnpm start -- --context overlay,base   (swap order: base wins where both set)
+ */
+import { configure, parseSenvArgs, loadConfig, senv, getContextValues } from "senv";
+
+configure(parseSenvArgs(process.argv.slice(2)));
+
+const database_url = senv("Database URL", {
+  key: "database_url",
+  env: "DATABASE_URL",
+  default: "postgres://default",
+});
+
+const cache_ttl = senv("Cache TTL (seconds)", {
+  key: "cache_ttl",
+  default: "0",
+});
+
+const region = senv("Region", {
+  key: "region",
+  default: "none",
+});
+
+const debug = senv("Debug", {
+  key: "debug",
+  default: "false",
+});
+
+async function main() {
+  const config = loadConfig();
+  console.log("\nContext order:", config.contexts?.join(" → "));
+  console.log("Merged context map:", getContextValues());
+  console.log("");
+
+  const db = await database_url.get();
+  const ttl = await cache_ttl.get();
+  const reg = await region.get();
+  const dbg = await debug.get();
+
+  console.log("Resolved:");
+  console.log("  database_url:", db);
+  console.log("  cache_ttl:", ttl);
+  console.log("  region:", reg);
+  console.log("  debug:", dbg);
+  console.log("");
+}
+
+main().catch(console.error);
