@@ -1,8 +1,10 @@
 # senv
 
-**Environment and context variables with runtime-configurable resolution.**
+**Where did that config come from?** Env vars? A file? Something you typed last time? Senv sorts it out. ✨
 
-Senv is a **library**, not a CLI: your application parses CLI flags (or environment variables) and passes the result into `senv.configure()`. Resolution behavior (where values come from, whether to prompt, whether to save) is controlled at runtime by configuration—not hard-coded per variable.
+Senv is a small **library** that gives you one clear way to define “this app needs an API URL, a port, a feature flag…” and then figures out the value at runtime: from CLI overrides, environment variables, **context files** (think per-environment or per-run JSON), or a default. You don’t bake “always use env” or “never prompt” into each variable—you control that with config (file, env, or whatever your app passes in). So the same codebase can be strict in CI, interactive in dev, and override-friendly from the command line.
+
+No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `senv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/senv-zod) for validation and [Inquirer](packages/senv-inquirer) for prompts. One API, many sources—no more “is this from .env or a flag?” detective work.
 
 ---
 
@@ -59,6 +61,8 @@ await api_url.save();                   // write current value to a context file
 
 ## Resolution order
 
+Values are chosen in this order (first match wins):
+
 1. **Set overrides** – `config.set[key]` (e.g. from `--set key=value`).
 2. **Environment** – `process.env[envKey]` (unless `ignoreEnv`).
 3. **Context** – Merged values from context files (unless `ignoreContext`), in context order.
@@ -74,16 +78,16 @@ Prompting (when to ask the user) is controlled by config `prompt`: `always` | `n
 |--------|--------|
 | **senv** | Core: config, context discovery, variables, `get` / `safeGet` / `save`. |
 | **senv-zod** | `validator(zodSchema)` for type-safe validation and coercion. |
-| **senv-inquirer** | `prompt()` that returns a function for the variable `prompt` option. |
+| **senv-inquirer** | `prompt()` for the variable `prompt` option (great for interactive dev). |
 
 ---
 
 ## Examples
 
-See [examples/](examples/README.md). Highlights:
+See [examples/](examples/README.md) for runnable demos—or jump straight to `examples/full-demo` and run `pnpm start`:
 
-- **basic** – Default, env, `get` / `safeGet`.
-- **full-demo** – Config file, contexts, resolution, validation, save, CLI (run `pnpm start` in `examples/full-demo`).
+- **basic** – Minimal: default, env, `get` / `safeGet`.
+- **full-demo** – The kitchen sink: config file, contexts, resolution, validation, save, CLI. Run `pnpm start` in `examples/full-demo`.
 - **contexts** – Context merge order; `--context overlay,base`.
 - **with-config-file** – All config from `senv.config.json`.
 - **save-flow** – `save()`, `saveContextTo: "ask"`, callbacks.
