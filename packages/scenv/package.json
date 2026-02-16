@@ -1,6 +1,6 @@
 {
   "name": "scenv",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Environment and context variables with runtime-configurable resolution",
   "repository": { "type": "git", "url": "git+https://github.com/PKWadsy/senv.git" },
   "keywords": ["env", "config", "context", "variables"],
