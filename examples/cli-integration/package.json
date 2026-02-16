@@ -1,0 +1,15 @@
+{
+  "name": "example-cli-integration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts",
+    "start:with-args": "tsx index.ts --prompt never --set api_url=https://cli.example.com"
+  },
+  "dependencies": {
+    "senv": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

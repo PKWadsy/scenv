@@ -1,6 +1,0 @@
-{
-  "contexts": ["prod"],
-  "prompt": "fallback",
-  "savePrompt": "ask",
-  "saveContextTo": "ask"
-}

@@ -1,0 +1,16 @@
+{
+  "name": "example-with-zod",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "dependencies": {
+    "senv": "workspace:*",
+    "senv-zod": "workspace:*",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

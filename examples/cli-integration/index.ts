@@ -1,0 +1,26 @@
+/**
+ * Integrate senv with your app's CLI: parse argv and pass to configure().
+ * Then variables respect --set, --prompt, --context, etc.
+ *
+ * Run:
+ *   pnpm install && pnpm start
+ *   pnpm start:with-args
+ *   pnpm start -- --context prod --set api_url=https://api.prod.com
+ */
+import { configure, parseSenvArgs, senv } from "senv";
+
+// Pass through CLI args (e.g. process.argv.slice(2) from your app)
+configure(parseSenvArgs(process.argv.slice(2)));
+
+const api_url = senv("API URL", {
+  key: "api_url",
+  env: "API_URL",
+  default: "http://localhost:4000",
+});
+
+async function main() {
+  const url = await api_url.get();
+  console.log("API URL:", url);
+}
+
+main().catch(console.error);
