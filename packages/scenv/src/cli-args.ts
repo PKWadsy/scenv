@@ -1,12 +1,12 @@
-import type { SenvConfig } from "./config.js";
+import type { ScenvConfig } from "./config.js";
 
 /**
- * Parse argv (e.g. process.argv.slice(2)) into SenvConfig for configure().
+ * Parse argv (e.g. process.argv.slice(2)) into ScenvConfig for configure().
  * Supports: --context a,b,c --add-context x,y --prompt fallback --ignore-env --ignore-context
  * --set key=value --save-prompt ask --save-context-to prod
  */
-export function parseSenvArgs(argv: string[]): Partial<SenvConfig> {
-  const config: Partial<SenvConfig> = {};
+export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
+  const config: Partial<ScenvConfig> = {};
   let i = 0;
   while (i < argv.length) {
     const arg = argv[i];
@@ -17,7 +17,7 @@ export function parseSenvArgs(argv: string[]): Partial<SenvConfig> {
     } else if (arg === "--prompt" && argv[i + 1] !== undefined) {
       const v = argv[++i].toLowerCase();
       if (["always", "never", "fallback", "no-env"].includes(v)) {
-        config.prompt = v as SenvConfig["prompt"];
+        config.prompt = v as ScenvConfig["prompt"];
       }
     } else if (arg === "--ignore-env") {
       config.ignoreEnv = true;
@@ -33,7 +33,7 @@ export function parseSenvArgs(argv: string[]): Partial<SenvConfig> {
     } else if (arg === "--save-prompt" && argv[i + 1] !== undefined) {
       const v = argv[++i].toLowerCase();
       if (["always", "never", "ask"].includes(v)) {
-        config.savePrompt = v as SenvConfig["savePrompt"];
+        config.savePrompt = v as ScenvConfig["savePrompt"];
       }
     } else if (arg === "--save-context-to" && argv[i + 1] !== undefined) {
       config.saveContextTo = argv[++i];

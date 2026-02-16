@@ -1,14 +1,14 @@
 /**
- * Basic senv usage: define a variable with a default and optional key/env.
+ * Basic scenv usage: define a variable with a default and optional key/env.
  * Resolution order: --set > env > context > default.
  *
  * Run:
  *   pnpm install && pnpm start
  *   CORE_SERVER_URL=https://prod.example.com pnpm start
  */
-import { senv } from "scenv";
+import { scenv } from "scenv";
 
-const core_server_url = senv("Core Server URL", {
+const core_server_url = scenv("Core Server URL", {
   key: "core_server_url",
   env: "CORE_SERVER_URL",
   default: "localhost:7000",

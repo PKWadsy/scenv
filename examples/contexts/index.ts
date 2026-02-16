@@ -6,27 +6,27 @@
  *   cd examples/contexts && pnpm start
  *   pnpm start -- --context overlay,base   (swap order: base wins where both set)
  */
-import { configure, parseSenvArgs, loadConfig, senv, getContextValues } from "scenv";
+import { configure, parseScenvArgs, loadConfig, scenv, getContextValues } from "scenv";
 
-configure(parseSenvArgs(process.argv.slice(2)));
+configure(parseScenvArgs(process.argv.slice(2)));
 
-const database_url = senv("Database URL", {
+const database_url = scenv("Database URL", {
   key: "database_url",
   env: "DATABASE_URL",
   default: "postgres://default",
 });
 
-const cache_ttl = senv("Cache TTL (seconds)", {
+const cache_ttl = scenv("Cache TTL (seconds)", {
   key: "cache_ttl",
   default: "0",
 });
 
-const region = senv("Region", {
+const region = scenv("Region", {
   key: "region",
   default: "none",
 });
 
-const debug = senv("Debug", {
+const debug = scenv("Debug", {
   key: "debug",
   default: "false",
 });

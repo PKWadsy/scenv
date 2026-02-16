@@ -14,9 +14,9 @@
  */
 import {
   configure,
-  parseSenvArgs,
+  parseScenvArgs,
   loadConfig,
-  senv,
+  scenv,
   getContextValues,
   discoverContextPaths,
 } from "scenv";
@@ -28,23 +28,23 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
-// CLI and env are applied on top of senv.config.json
-configure(parseSenvArgs(process.argv.slice(2)));
+// CLI and env are applied on top of scenv.config.json
+configure(parseScenvArgs(process.argv.slice(2)));
 
-const api_url = senv("API URL", {
+const api_url = scenv("API URL", {
   key: "api_url",
   env: "API_URL",
   default: "http://localhost:4000",
 });
 
-const port = senv("Port", {
+const port = scenv("Port", {
   key: "port",
   env: "PORT",
   default: 3000,
   validator: validator(z.coerce.number().min(1).max(65535)),
 });
 
-const log_level = senv("Log level", {
+const log_level = scenv("Log level", {
   key: "log_level",
   env: "LOG_LEVEL",
   default: "info",
@@ -54,7 +54,7 @@ const log_level = senv("Log level", {
       : { success: false, error: "invalid log level" },
 });
 
-const optional_feature = senv("Optional feature flag", {
+const optional_feature = scenv("Optional feature flag", {
   key: "feature_beta",
   env: "FEATURE_BETA",
   default: "false",
@@ -64,7 +64,7 @@ async function main() {
   const config = loadConfig();
   const root = config.root ?? process.cwd();
 
-  console.log("\n═══ senv full demo ═══\n");
+  console.log("\n═══ scenv full demo ═══\n");
 
   console.log("── Config (file + env + CLI merge) ──");
   console.log("  root:", root);
@@ -95,7 +95,7 @@ async function main() {
   console.log("  feature_beta:", feature);
 
   console.log("\n── safeGet() (no throw) ──");
-  const missing = senv("Required with no default", { key: "required_missing" });
+  const missing = scenv("Required with no default", { key: "required_missing" });
   const result = await missing.safeGet();
   if (result.success) {
     console.log("  required_missing:", result.value);
@@ -105,7 +105,7 @@ async function main() {
 
   if (config.saveContextTo && config.saveContextTo !== "ask") {
     console.log("\n── Save to context ──");
-    const toSave = senv("Saved value", {
+    const toSave = scenv("Saved value", {
       key: "demo_saved_at",
       default: new Date().toISOString(),
     });

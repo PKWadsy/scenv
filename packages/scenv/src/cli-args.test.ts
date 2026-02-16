@@ -1,35 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { parseSenvArgs } from "./cli-args.js";
+import { parseScenvArgs } from "./cli-args.js";
 
-describe("parseSenvArgs", () => {
+describe("parseScenvArgs", () => {
   it("parses --context", () => {
-    const config = parseSenvArgs(["--context", "prod,dev"]);
+    const config = parseScenvArgs(["--context", "prod,dev"]);
     expect(config.contexts).toEqual(["prod", "dev"]);
   });
 
   it("parses --add-context", () => {
-    const config = parseSenvArgs(["--add-context", "staging"]);
+    const config = parseScenvArgs(["--add-context", "staging"]);
     expect(config.addContexts).toEqual(["staging"]);
   });
 
   it("parses --prompt", () => {
-    expect(parseSenvArgs(["--prompt", "fallback"]).prompt).toBe("fallback");
-    expect(parseSenvArgs(["--prompt", "never"]).prompt).toBe("never");
+    expect(parseScenvArgs(["--prompt", "fallback"]).prompt).toBe("fallback");
+    expect(parseScenvArgs(["--prompt", "never"]).prompt).toBe("never");
   });
 
   it("parses --ignore-env and --ignore-context", () => {
-    const config = parseSenvArgs(["--ignore-env", "--ignore-context"]);
+    const config = parseScenvArgs(["--ignore-env", "--ignore-context"]);
     expect(config.ignoreEnv).toBe(true);
     expect(config.ignoreContext).toBe(true);
   });
 
   it("parses --set key=value", () => {
-    const config = parseSenvArgs(["--set", "foo=bar"]);
+    const config = parseScenvArgs(["--set", "foo=bar"]);
     expect(config.set).toEqual({ foo: "bar" });
   });
 
   it("parses multiple --set", () => {
-    const config = parseSenvArgs([
+    const config = parseScenvArgs([
       "--set",
       "a=1",
       "--set",
@@ -39,12 +39,12 @@ describe("parseSenvArgs", () => {
   });
 
   it("parses --set=key=value", () => {
-    const config = parseSenvArgs(["--set=core_server_url=localhost:7000"]);
+    const config = parseScenvArgs(["--set=core_server_url=localhost:7000"]);
     expect(config.set).toEqual({ core_server_url: "localhost:7000" });
   });
 
   it("parses --save-prompt and --save-context-to", () => {
-    const config = parseSenvArgs([
+    const config = parseScenvArgs([
       "--save-prompt",
       "ask",
       "--save-context-to",
@@ -55,7 +55,7 @@ describe("parseSenvArgs", () => {
   });
 
   it("returns empty partial for empty argv", () => {
-    const config = parseSenvArgs([]);
+    const config = parseScenvArgs([]);
     expect(config).toEqual({});
   });
 });

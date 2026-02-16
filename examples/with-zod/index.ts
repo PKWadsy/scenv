@@ -6,18 +6,18 @@
  *   pnpm install && pnpm start
  *   PORT=3001 pnpm start
  */
-import { senv } from "scenv";
+import { scenv } from "scenv";
 import { validator } from "scenv-zod";
 import { z } from "zod";
 
-const port = senv("Port", {
+const port = scenv("Port", {
   key: "port",
   env: "PORT",
   default: 3000,
   validator: validator(z.coerce.number().min(1).max(65535)),
 });
 
-const debug = senv("Debug mode", {
+const debug = scenv("Debug mode", {
   key: "debug",
   default: false,
   validator: validator(

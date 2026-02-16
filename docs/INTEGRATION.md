@@ -2,16 +2,16 @@
 
 ## CLI integration
 
-Scenv does not parse `process.argv` itself. Your app should parse CLI arguments and pass the result to `configure()`. Use **`parseSenvArgs()`** for the flags scenv understands:
+Scenv does not parse `process.argv` itself. Your app should parse CLI arguments and pass the result to `configure()`. Use **`parseScenvArgs()`** for the flags scenv understands:
 
 ```ts
-import { configure, parseSenvArgs } from "scenv";
+import { configure, parseScenvArgs } from "scenv";
 
 // Pass everything after the script name (or your app name).
-configure(parseSenvArgs(process.argv.slice(2)));
+configure(parseScenvArgs(process.argv.slice(2)));
 ```
 
-If you use a CLI framework (e.g. yargs, commander), you can map its options to the same config shape and call `configure()` with that object instead of (or in addition to) `parseSenvArgs()`.
+If you use a CLI framework (e.g. yargs, commander), you can map its options to the same config shape and call `configure()` with that object instead of (or in addition to) `parseScenvArgs()`.
 
 ---
 
@@ -20,18 +20,18 @@ If you use a CLI framework (e.g. yargs, commander), you can map its options to t
 **scenv-zod** provides a validator that uses Zod schemas. Values from set/env/context are strings; use `z.coerce.number()`, `z.coerce.boolean()`, etc., to parse them.
 
 ```ts
-import { senv } from "scenv";
+import { scenv } from "scenv";
 import { validator } from "scenv-zod";
 import { z } from "zod";
 
-const port = senv("Port", {
+const port = scenv("Port", {
   key: "port",
   env: "PORT",
   default: 3000,
   validator: validator(z.coerce.number().min(1).max(65535)),
 });
 
-const debug = senv("Debug", {
+const debug = scenv("Debug", {
   key: "debug",
   default: false,
   validator: validator(
@@ -50,10 +50,10 @@ Install: `pnpm add scenv scenv-zod zod`.
 **scenv-inquirer** provides a `prompt()` that returns a function suitable for the variable `prompt` option. Scenv calls that function with `(name, defaultValue)` when it needs to prompt; you do not pass the name or default yourself.
 
 ```ts
-import { senv } from "scenv";
+import { scenv } from "scenv";
 import { prompt } from "scenv-inquirer";
 
-const api_url = senv("API URL", {
+const api_url = scenv("API URL", {
   default: "http://localhost:4000",
   prompt: prompt(),
 });
@@ -75,7 +75,7 @@ configure(callbacks());
 configure({ ...yourConfig, ...callbacks() });
 ```
 
-Then `SENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` will prompt the user interactively (save for next time? which context?). You can also wire a single callback: `configure({ callbacks: { onAskSaveAfterPrompt: askSaveAfterPrompt() } })` using the exported `askSaveAfterPrompt` and `askContext` helpers.
+Then `SCENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` will prompt the user interactively (save for next time? which context?). You can also wire a single callback: `configure({ callbacks: { onAskSaveAfterPrompt: askSaveAfterPrompt() } })` using the exported `askSaveAfterPrompt` and `askContext` helpers.
 
 ---
 
@@ -83,8 +83,8 @@ Then `SENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` will prompt the user inte
 
 Typical setup:
 
-1. **Default** – `senv.config.json` in the project with `contexts`, `prompt`, etc.
-2. **Environment** – CI or shell sets `SENV_PROMPT=never`, `SENV_ADD_CONTEXTS=prod`, etc.
-3. **CLI** – App calls `configure(parseSenvArgs(process.argv.slice(2)))` so `--set`, `--context`, and other flags override.
+1. **Default** – `scenv.config.json` in the project with `contexts`, `prompt`, etc.
+2. **Environment** – CI or shell sets `SCENV_PROMPT=never`, `SCENV_ADD_CONTEXTS=prod`, etc.
+3. **CLI** – App calls `configure(parseScenvArgs(process.argv.slice(2)))` so `--set`, `--context`, and other flags override.
 
 Variable definitions stay the same; only the merged config changes how resolution and saving behave.

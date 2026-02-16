@@ -1,6 +1,6 @@
 # Saving
 
-Senv can write variable values into context files so they can be resolved in future runs. Saving is controlled by config and optional callbacks.
+Scenv can write variable values into context files so they can be resolved in future runs. Saving is controlled by config and optional callbacks.
 
 ---
 
@@ -18,9 +18,9 @@ Calling **`variable.save(value?)`** writes the variable’s key and value to a c
 The target context is determined by **`saveContextTo`**:
 
 - **String** (e.g. `"my-saves"`) – Save to that context. The file path is the one discovered for that name, or `{root}/{name}.context.json` if the context is new.
-- **`"ask"`** – Senv calls the **`onAskContext`** callback so your app can decide (e.g. prompt the user or pick from a list). The callback receives `(variableName, contextNames)` and returns the context name to use (or a new name to create).
+- **`"ask"`** – Scenv calls the **`onAskContext`** callback so your app can decide (e.g. prompt the user or pick from a list). The callback receives `(variableName, contextNames)` and returns the context name to use (or a new name to create).
 
-If `saveContextTo` is unset or the callback doesn’t return a valid name, senv falls back to the first context in the config context list, or `"default"`.
+If `saveContextTo` is unset or the callback doesn’t return a valid name, scenv falls back to the first context in the config context list, or `"default"`.
 
 ---
 
@@ -46,7 +46,7 @@ configure({
 ```
 
 - **`onAskContext`** – Used when `saveContextTo` is `"ask"` and you call `variable.save()`. Your app can prompt for a context name or create a new one.
-- **`onAskSaveAfterPrompt`** – Used when the user was just prompted for a value (during `get()`) and config has `savePrompt: "ask"` or `savePrompt: "always"`. If you return a context name, senv writes the value to that context; if you return `null`, it does not save.
+- **`onAskSaveAfterPrompt`** – Used when the user was just prompted for a value (during `get()`) and config has `savePrompt: "ask"` or `savePrompt: "always"`. If you return a context name, scenv writes the value to that context; if you return `null`, it does not save.
 
 ---
 

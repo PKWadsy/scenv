@@ -10,7 +10,7 @@ describe("config", () => {
 
   beforeEach(() => {
     resetConfig();
-    tmpDir = join(tmpdir(), `senv-test-${Date.now()}`);
+    tmpDir = join(tmpdir(), `scenv-test-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     process.env = { ...origEnv };
   });
@@ -31,9 +31,9 @@ describe("config", () => {
     expect(config.prompt).toBeUndefined();
   });
 
-  it("loadConfig reads senv.config.json", () => {
+  it("loadConfig reads scenv.config.json", () => {
     writeFileSync(
-      join(tmpDir, "senv.config.json"),
+      join(tmpDir, "scenv.config.json"),
       JSON.stringify({
         contexts: ["prod"],
         prompt: "fallback",
@@ -48,7 +48,7 @@ describe("config", () => {
 
   it("configure merges programmatic config with precedence over file", () => {
     writeFileSync(
-      join(tmpDir, "senv.config.json"),
+      join(tmpDir, "scenv.config.json"),
       JSON.stringify({ contexts: ["file"], prompt: "never" })
     );
     configure({ prompt: "always", root: tmpDir });
@@ -59,7 +59,7 @@ describe("config", () => {
 
   it("contexts replace: programmatic contexts wins", () => {
     writeFileSync(
-      join(tmpDir, "senv.config.json"),
+      join(tmpDir, "scenv.config.json"),
       JSON.stringify({ contexts: ["file"] })
     );
     configure({ contexts: ["prog"], root: tmpDir });
@@ -69,7 +69,7 @@ describe("config", () => {
 
   it("addContexts merges with file contexts", () => {
     writeFileSync(
-      join(tmpDir, "senv.config.json"),
+      join(tmpDir, "scenv.config.json"),
       JSON.stringify({ contexts: ["file-a"] })
     );
     configure({ addContexts: ["prog-b"], root: tmpDir });
@@ -78,16 +78,18 @@ describe("config", () => {
     expect(config.contexts).toContain("prog-b");
   });
 
-  it("env SENV_PROMPT and SENV_IGNORE_ENV overlay file", () => {
+  it("env SCENV_PROMPT and SCENV_IGNORE_ENV overlay file", () => {
     writeFileSync(
-      join(tmpDir, "senv.config.json"),
+      join(tmpDir, "scenv.config.json"),
       JSON.stringify({ prompt: "never" })
     );
-    process.env.SENV_PROMPT = "always";
-    process.env.SENV_IGNORE_ENV = "1";
+    process.env.SCENV_PROMPT = "always";
+    process.env.SCENV_IGNORE_ENV = "1";
     const config = loadConfig(tmpDir);
     expect(config.prompt).toBe("always");
     expect(config.ignoreEnv).toBe(true);
+    delete process.env.SCENV_PROMPT;
+    delete process.env.SCENV_IGNORE_ENV;
   });
 
   it("resetConfig clears programmatic config", () => {
@@ -98,27 +100,27 @@ describe("config", () => {
   });
 
   it("loadConfigFile returns {} for invalid JSON", () => {
-    writeFileSync(join(tmpDir, "senv.config.json"), "not valid json {");
+    writeFileSync(join(tmpDir, "scenv.config.json"), "not valid json {");
     const config = loadConfig(tmpDir);
     expect(config.contexts).toEqual([]);
     expect(config.prompt).toBeUndefined();
   });
 
-  it("env SENV_IGNORE_ENV=yes is coerced to true", () => {
-    process.env.SENV_IGNORE_ENV = "yes";
+  it("env SCENV_IGNORE_ENV=yes is coerced to true", () => {
+    process.env.SCENV_IGNORE_ENV = "yes";
     const config = loadConfig(tmpDir);
     expect(config.ignoreEnv).toBe(true);
-    delete process.env.SENV_IGNORE_ENV;
+    delete process.env.SCENV_IGNORE_ENV;
   });
 
-  it("env SENV_SAVE_PROMPT=ask and SENV_PROMPT=no-env", () => {
-    process.env.SENV_SAVE_PROMPT = "ask";
-    process.env.SENV_PROMPT = "no-env";
+  it("env SCENV_SAVE_PROMPT=ask and SCENV_PROMPT=no-env", () => {
+    process.env.SCENV_SAVE_PROMPT = "ask";
+    process.env.SCENV_PROMPT = "no-env";
     const config = loadConfig(tmpDir);
     expect(config.savePrompt).toBe("ask");
     expect(config.prompt).toBe("no-env");
-    delete process.env.SENV_SAVE_PROMPT;
-    delete process.env.SENV_PROMPT;
+    delete process.env.SCENV_SAVE_PROMPT;
+    delete process.env.SCENV_PROMPT;
   });
 
   it("configure with callbacks merges callbacks", () => {

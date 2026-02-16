@@ -30,7 +30,7 @@ function normalizeValidatorResult(
   return result;
 }
 
-export interface SenvVariableOptions<T> {
+export interface ScenvVariableOptions<T> {
   key?: string;
   env?: string;
   default?: T;
@@ -38,7 +38,7 @@ export interface SenvVariableOptions<T> {
   prompt?: PromptFn<T>;
 }
 
-export interface SenvVariable<T> {
+export interface ScenvVariable<T> {
   get(): Promise<T>;
   safeGet(): Promise<
     { success: true; value: T } | { success: false; error?: unknown }
@@ -46,10 +46,10 @@ export interface SenvVariable<T> {
   save(value?: T): Promise<void>;
 }
 
-export function senv<T>(
+export function scenv<T>(
   name: string,
-  options: SenvVariableOptions<T> = {}
-): SenvVariable<T> {
+  options: ScenvVariableOptions<T> = {}
+): ScenvVariable<T> {
   const key = options.key ?? defaultKeyFromName(name);
   const envKey = options.env ?? defaultEnvFromKey(key);
   const validator = options.validator;

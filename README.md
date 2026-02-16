@@ -4,7 +4,7 @@
 
 Scenv is a small **library** that gives you one clear way to define “this app needs an API URL, a port, a feature flag…” and then figures out the value at runtime: from CLI overrides, environment variables, **context files** (think per-environment or per-run JSON), or a default. You don’t bake “always use env” or “never prompt” into each variable—you control that with config (file, env, or whatever your app passes in). So the same codebase can be strict in CI, interactive in dev, and override-friendly from the command line.
 
-No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `senv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/scenv-zod) for validation and [Inquirer](packages/scenv-inquirer) for prompts. One API, many sources—no more “is this from .env or a flag?” detective work.
+No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `scenv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/scenv-zod) for validation and [Inquirer](packages/scenv-inquirer) for prompts. One API, many sources—no more “is this from .env or a flag?” detective work.
 
 ---
 
@@ -17,12 +17,12 @@ pnpm add scenv
 ```
 
 ```ts
-import { configure, parseSenvArgs, senv } from "scenv";
+import { configure, parseScenvArgs, scenv } from "scenv";
 
 // Optional: apply CLI flags (--set, --context, --prompt, etc.)
-configure(parseSenvArgs(process.argv.slice(2)));
+configure(parseScenvArgs(process.argv.slice(2)));
 
-const api_url = senv("API URL", {
+const api_url = scenv("API URL", {
   key: "api_url",
   env: "API_URL",
   default: "http://localhost:4000",
@@ -39,9 +39,9 @@ await api_url.save();                   // write current value to a context file
 
 | Concept | Description |
 |--------|-------------|
-| **Variable** | Created with `senv(name, options)`. Has a display name, optional `key` (for env/context), optional `default`, optional `validator` and `prompt` function. |
+| **Variable** | Created with `scenv(name, options)`. Has a display name, optional `key` (for env/context), optional `default`, optional `validator` and `prompt` function. |
 | **Resolution** | When you call `.get()` or `.safeGet()`, the value is resolved in order: **set overrides** → **environment** → **context files** → **default**. |
-| **Config** | Where to load contexts from, when to prompt, whether to ignore env/context, where to save. Comes from **file** (`senv.config.json`), **environment** (`SENV_*`), and **programmatic** (`configure()`). |
+| **Config** | Where to load contexts from, when to prompt, whether to ignore env/context, where to save. Comes from **file** (`scenv.config.json`), **environment** (`SCENV_*`), and **programmatic** (`configure()`). |
 | **Context** | A JSON file `{name}.context.json` under your project. Contexts are merged in a defined order; later context overwrites earlier for the same key. |
 
 ---
@@ -50,11 +50,11 @@ await api_url.save();                   // write current value to a context file
 
 | Document | Contents |
 |----------|----------|
-| [**Configuration**](docs/CONFIGURATION.md) | Config file, `SENV_*` env vars, programmatic config, precedence. |
+| [**Configuration**](docs/CONFIGURATION.md) | Config file, `SCENV_*` env vars, programmatic config, precedence. |
 | [**Contexts**](docs/CONTEXTS.md) | Context files, discovery, merge order, `--context` / `--add-context`. |
 | [**Resolution**](docs/RESOLUTION.md) | Resolution order, prompt modes (`always` / `never` / `fallback` / `no-env`), validation. |
 | [**Saving**](docs/SAVING.md) | `variable.save()`, `savePrompt`, `saveContextTo`, callbacks. |
-| [**API reference**](docs/API.md) | `senv()`, `configure`, `loadConfig`, `parseSenvArgs`, types. |
+| [**API reference**](docs/API.md) | `scenv()`, `configure`, `loadConfig`, `parseScenvArgs`, types. |
 | [**Integration**](docs/INTEGRATION.md) | CLI integration, scenv-zod, scenv-inquirer. |
 
 ---
@@ -89,7 +89,7 @@ See [examples/](examples/README.md) for runnable demos—or jump straight to `ex
 - **basic** – Minimal: default, env, `get` / `safeGet`.
 - **full-demo** – The kitchen sink: config file, contexts, resolution, validation, save, CLI. Run `pnpm start` in `examples/full-demo`.
 - **contexts** – Context merge order; `--context overlay,base`.
-- **with-config-file** – All config from `senv.config.json`.
+- **with-config-file** – All config from `scenv.config.json`.
 - **save-flow** – `save()`, `saveContextTo: "ask"`, callbacks.
 
 ---

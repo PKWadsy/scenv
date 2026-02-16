@@ -1,18 +1,18 @@
 /**
- * Config is loaded from senv.config.json in this directory (searched upward from cwd).
+ * Config is loaded from scenv.config.json in this directory (searched upward from cwd).
  * No programmatic configure() — everything comes from the config file (and env overlay).
  *
  * Run from this directory:
  *   cd examples/with-config-file && pnpm start
  *
  * Override with env:
- *   SENV_PROMPT=never SENV_ADD_CONTEXTS=extra pnpm start
+ *   SCENV_PROMPT=never SCENV_ADD_CONTEXTS=extra pnpm start
  */
-import { loadConfig, senv } from "scenv";
+import { loadConfig, scenv } from "scenv";
 
 async function main() {
   const config = loadConfig();
-  console.log("\nLoaded from senv.config.json (and env):");
+  console.log("\nLoaded from scenv.config.json (and env):");
   console.log("  root:", config.root);
   console.log("  contexts:", config.contexts);
   console.log("  prompt:", config.prompt);
@@ -21,11 +21,11 @@ async function main() {
   console.log("  saveContextTo:", config.saveContextTo);
   console.log("");
 
-  const app_name = senv("App name", {
+  const app_name = scenv("App name", {
     key: "app_name",
     default: "unknown",
   });
-  const app_env = senv("App env", {
+  const app_env = scenv("App env", {
     key: "app_env",
     default: "development",
   });

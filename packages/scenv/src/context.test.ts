@@ -15,7 +15,7 @@ describe("context", () => {
 
   beforeEach(() => {
     resetConfig();
-    tmpDir = join(tmpdir(), `senv-ctx-${Date.now()}`);
+    tmpDir = join(tmpdir(), `scenv-ctx-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     configure({ root: tmpDir, contexts: [] });
   });

@@ -1,13 +1,13 @@
 # Contexts
 
-A **context** is a JSON file named `{contextName}.context.json`. Senv discovers these files recursively under the config **root** directory and merges their key-value pairs in a defined order. Context values are used during variable resolution when `ignoreContext` is not set.
+A **context** is a JSON file named `{contextName}.context.json`. Scenv discovers these files recursively under the config **root** directory and merges their key-value pairs in a defined order. Context values are used during variable resolution when `ignoreContext` is not set.
 
 ---
 
 ## Context files
 
 - **Naming:** `{name}.context.json` (e.g. `prod.context.json`, `dev.context.json`).
-- **Location:** Anywhere under the root directory; senv searches recursively. The **first** file found for a given context name wins (search order is deterministic but implementation-dependent).
+- **Location:** Anywhere under the root directory; scenv searches recursively. The **first** file found for a given context name wins (search order is deterministic but implementation-dependent).
 - **Format:** JSON object. Keys are variable keys (e.g. `api_url`, `port`). Values must be strings for resolution; non-string values are ignored when loading.
 
 Example `prod.context.json`:
@@ -24,14 +24,14 @@ Example `prod.context.json`:
 
 ## Context list and merge order
 
-The **context list** is the ordered set of context names that senv loads and merges. It is built from:
+The **context list** is the ordered set of context names that scenv loads and merges. It is built from:
 
-- **Replace:** `contexts: ["a", "b"]` (or `--context a,b` or `SENV_CONTEXT=a,b`) replaces the entire list with the given names.
-- **Merge:** `addContexts: ["c"]` (or `--add-context c` or `SENV_ADD_CONTEXTS=c`) appends names to the existing list.
+- **Replace:** `contexts: ["a", "b"]` (or `--context a,b` or `SCENV_CONTEXT=a,b`) replaces the entire list with the given names.
+- **Merge:** `addContexts: ["c"]` (or `--add-context c` or `SCENV_ADD_CONTEXTS=c`) appends names to the existing list.
 
 Precedence for defining the list: programmatic over env over file. So if the file has `contexts: ["file"]` and you call `configure({ contexts: ["prog"] })`, the effective list is `["prog"]`.
 
-For each variable key, senv looks up the value in the **merged** context map: it loads each context file in the list order and overwrites the map with that file's entries. So **later contexts override earlier ones** for the same key.
+For each variable key, scenv looks up the value in the **merged** context map: it loads each context file in the list order and overwrites the map with that file's entries. So **later contexts override earlier ones** for the same key.
 
 Example: list `["base", "overlay"]`.
 
@@ -46,7 +46,7 @@ If you change the list to `["overlay", "base"]`, then base is applied after over
 
 ## Discovery: discoverContextPaths()
 
-`discoverContextPaths(dir)` recursively scans `dir` for `*.context.json` files and returns a `Map` from context name to absolute path. The same name appearing in more than one path: the first path found is kept. Senv uses this internally when resolving context values and when writing to a context.
+`discoverContextPaths(dir)` recursively scans `dir` for `*.context.json` files and returns a `Map` from context name to absolute path. The same name appearing in more than one path: the first path found is kept. Scenv uses this internally when resolving context values and when writing to a context.
 
 You can use it yourself to inspect where context files were found:
 
@@ -71,7 +71,7 @@ for (const [name, path] of paths) {
 
 ## Writing to a context
 
-When you call `variable.save()` or when saving after a prompt (see [Saving](SAVING.md)), senv writes to a context file. The target context is determined by `saveContextTo`:
+When you call `variable.save()` or when saving after a prompt (see [Saving](SAVING.md)), scenv writes to a context file. The target context is determined by `saveContextTo`:
 
 - If it is a string (e.g. `"my-saves"`), that context is used. The file path is the one from discovery, or `{root}/{contextName}.context.json` if the context is new.
 - If it is `"ask"`, the `onAskContext` callback is called so your app can ask the user which context to use (or create a new name).

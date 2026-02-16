@@ -6,8 +6,8 @@ import {
   getCallbacks,
   getContextValues,
   discoverContextPaths,
-  senv,
-  parseSenvArgs,
+  scenv,
+  parseScenvArgs,
 } from "./index.js";
 
 describe("index", () => {
@@ -27,13 +27,13 @@ describe("index", () => {
     expect(typeof discoverContextPaths).toBe("function");
   });
 
-  it("re-exports senv, parseSenvArgs", () => {
-    expect(typeof senv).toBe("function");
-    expect(typeof parseSenvArgs).toBe("function");
-    const v = senv("Test", { default: "x" });
+  it("re-exports scenv, parseScenvArgs", () => {
+    expect(typeof scenv).toBe("function");
+    expect(typeof parseScenvArgs).toBe("function");
+    const v = scenv("Test", { default: "x" });
     expect(v.get).toBeDefined();
     expect(v.safeGet).toBeDefined();
     expect(v.save).toBeDefined();
-    expect(parseSenvArgs([])).toEqual({});
+    expect(parseScenvArgs([])).toEqual({});
   });
 });

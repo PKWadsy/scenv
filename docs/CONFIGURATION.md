@@ -1,18 +1,18 @@
 # Configuration
 
-Senv is configured from three layers, merged with the following **precedence** (highest first):
+Scenv is configured from three layers, merged with the following **precedence** (highest first):
 
-1. **Programmatic** – `senv.configure({ ... })` (e.g. from your CLI parser).
-2. **Environment** – `SENV_*` variables.
-3. **File** – `senv.config.json` (found by searching upward from the current working directory or from `config.root`).
+1. **Programmatic** – `scenv.configure({ ... })` (e.g. from your CLI parser).
+2. **Environment** – `SCENV_*` variables.
+3. **File** – `scenv.config.json` (found by searching upward from the current working directory or from `config.root`).
 
 Later layers never overwrite earlier ones for the same key; programmatic always wins.
 
 ---
 
-## Config file: `senv.config.json`
+## Config file: `scenv.config.json`
 
-Place `senv.config.json` in your project root (or any directory). Senv searches upward from `process.cwd()` (or from the configured `root`) until it finds a directory containing `senv.config.json`; that directory becomes the config root and the context search root unless overridden.
+Place `scenv.config.json` in your project root (or any directory). Scenv searches upward from `process.cwd()` (or from the configured `root`) until it finds a directory containing `scenv.config.json`; that directory becomes the config root and the context search root unless overridden.
 
 ### Supported keys
 
@@ -42,26 +42,26 @@ Place `senv.config.json` in your project root (or any directory). Senv searches 
 
 ---
 
-## Environment variables: `SENV_*`
+## Environment variables: `SCENV_*`
 
 Any of the config keys above can be set via environment variables. The mapping is:
 
 | Env variable | Config key | Notes |
 |--------------|------------|--------|
-| `SENV_CONTEXT` | `contexts` | Comma-separated list. Replaces context list. |
-| `SENV_ADD_CONTEXTS` | `addContexts` | Comma-separated list. Merged with existing contexts. |
-| `SENV_PROMPT` | `prompt` | `always`, `never`, `fallback`, `no-env`. |
-| `SENV_IGNORE_ENV` | `ignoreEnv` | `1`, `true`, or `yes` → true. |
-| `SENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
-| `SENV_SAVE_PROMPT` | `savePrompt` | `always`, `never`, `ask`. |
-| `SENV_SAVE_CONTEXT_TO` | `saveContextTo` | Context name or `ask`. |
+| `SCENV_CONTEXT` | `contexts` | Comma-separated list. Replaces context list. |
+| `SCENV_ADD_CONTEXTS` | `addContexts` | Comma-separated list. Merged with existing contexts. |
+| `SCENV_PROMPT` | `prompt` | `always`, `never`, `fallback`, `no-env`. |
+| `SCENV_IGNORE_ENV` | `ignoreEnv` | `1`, `true`, or `yes` → true. |
+| `SCENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
+| `SCENV_SAVE_PROMPT` | `savePrompt` | `always`, `never`, `ask`. |
+| `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Context name or `ask`. |
 
 Examples:
 
 ```bash
-export SENV_PROMPT=always
-export SENV_ADD_CONTEXTS=prod,staging
-export SENV_IGNORE_ENV=1
+export SCENV_PROMPT=always
+export SCENV_ADD_CONTEXTS=prod,staging
+export SCENV_IGNORE_ENV=1
 ```
 
 ---
@@ -71,9 +71,9 @@ export SENV_IGNORE_ENV=1
 Call `configure(partial)` to overlay config (and optionally callbacks) that take precedence over env and file. Typical use: parse your CLI and pass the result in.
 
 ```ts
-import { configure, parseSenvArgs } from "scenv";
+import { configure, parseScenvArgs } from "scenv";
 
-configure(parseSenvArgs(process.argv.slice(2)));
+configure(parseScenvArgs(process.argv.slice(2)));
 ```
 
 You can also pass a partial config and callbacks:
@@ -96,7 +96,7 @@ Calling `configure()` multiple times **merges** with the existing programmatic c
 
 ## Loading config: `loadConfig()`
 
-`loadConfig(root?)` returns the fully merged config (file ← env ← programmatic). You rarely need to call it directly for variable resolution (senv does that internally), but it is useful to inspect the effective config or to get `root` and `contexts` for context discovery.
+`loadConfig(root?)` returns the fully merged config (file ← env ← programmatic). You rarely need to call it directly for variable resolution (scenv does that internally), but it is useful to inspect the effective config or to get `root` and `contexts` for context discovery.
 
-- **root** – If you pass `loadConfig("/path/to/project")`, that path is used as the starting directory when searching for `senv.config.json`. The directory that contains `senv.config.json` (if found) is stored as `config.root`; otherwise `root` (or `process.cwd()`) is used.
+- **root** – If you pass `loadConfig("/path/to/project")`, that path is used as the starting directory when searching for `scenv.config.json`. The directory that contains `scenv.config.json` (if found) is stored as `config.root`; otherwise `root` (or `process.cwd()`) is used.
 - **contexts** – The final merged context list (replace vs add is resolved; see [Contexts](CONTEXTS.md)).

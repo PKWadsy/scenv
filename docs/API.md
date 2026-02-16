@@ -2,9 +2,9 @@
 
 ## Core
 
-### `senv<T>(name, options?)`
+### `scenv<T>(name, options?)`
 
-Creates a senv variable.
+Creates a scenv variable.
 
 - **name** (string) – Display name (used in prompts and errors).
 - **options** (object, optional):
@@ -26,7 +26,7 @@ Creates a senv variable.
 
 Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file.
 
-- **partial** – `Partial<SenvConfig>` and optionally `{ callbacks: SenvCallbacks }`.
+- **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
   - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `savePrompt`, `saveContextTo`, `root`.
   - **callbacks**: `{ onAskSaveAfterPrompt?, onAskContext? }` (see [Saving](SAVING.md)).
 
@@ -36,9 +36,9 @@ Merges config and optional callbacks into the programmatic layer. Precedence: pr
 
 Returns the fully merged config.
 
-- **root** (string, optional) – Start directory when searching for `senv.config.json`. If omitted, uses programmatic `root` or `process.cwd()`.
+- **root** (string, optional) – Start directory when searching for `scenv.config.json`. If omitted, uses programmatic `root` or `process.cwd()`.
 
-**Returns:** `SenvConfig` with at least `root`, `contexts` (array), and the rest of the config keys.
+**Returns:** `ScenvConfig` with at least `root`, `contexts` (array), and the rest of the config keys.
 
 ---
 
@@ -54,7 +54,7 @@ Returns a copy of the currently configured callbacks (`onAskSaveAfterPrompt`, `o
 
 ---
 
-### `parseSenvArgs(argv)`
+### `parseScenvArgs(argv)`
 
 Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `configure()`.
 
@@ -70,7 +70,7 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 - `--save-prompt always|never|ask`
 - `--save-context-to name`
 
-**Returns:** `Partial<SenvConfig>`.
+**Returns:** `Partial<ScenvConfig>`.
 
 ---
 
@@ -93,8 +93,8 @@ Recursively finds all `*.context.json` files under `dir`.
 
 ## Types
 
-- **SenvConfig** – Full config shape (see [Configuration](CONFIGURATION.md)).
+- **ScenvConfig** – Full config shape (see [Configuration](CONFIGURATION.md)).
 - **PromptMode** – `"always" | "never" | "fallback" | "no-env"`.
 - **SavePromptMode** – `"always" | "never" | "ask"`.
-- **SenvCallbacks** – `{ onAskSaveAfterPrompt?, onAskContext? }`.
-- **SenvVariable&lt;T&gt;** – `{ get(), safeGet(), save(value?) }`.
+- **ScenvCallbacks** – `{ onAskSaveAfterPrompt?, onAskContext? }`.
+- **ScenvVariable&lt;T&gt;** – `{ get(), safeGet(), save(value?) }`.

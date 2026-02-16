@@ -6,7 +6,7 @@
  */
 import {
   configure,
-  senv,
+  scenv,
   getCallbacks,
 } from "scenv";
 import { readFileSync, existsSync } from "node:fs";
@@ -34,7 +34,7 @@ configure({
 
 async function main() {
   console.log("\n── Save with saveContextTo: ask (onAskContext) ──");
-  const toSave = senv("Token", {
+  const toSave = scenv("Token", {
     key: "api_token",
     default: "demo-token-123",
   });
@@ -46,7 +46,7 @@ async function main() {
   }
 
   console.log("\n── save(value) with explicit value ──");
-  const other = senv("Other", { key: "other_key", default: "default" });
+  const other = scenv("Other", { key: "other_key", default: "default" });
   await other.save("explicit-value");
   if (existsSync(path)) {
     const data = JSON.parse(readFileSync(path, "utf-8"));

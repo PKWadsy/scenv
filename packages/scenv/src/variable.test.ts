@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { configure, resetConfig } from "./config.js";
-import { senv } from "./variable.js";
+import { scenv } from "./variable.js";
 import { writeFileSync, mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -10,7 +10,7 @@ describe("variable", () => {
 
   beforeEach(() => {
     resetConfig();
-    tmpDir = join(tmpdir(), `senv-var-${Date.now()}`);
+    tmpDir = join(tmpdir(), `scenv-var-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     configure({
       root: tmpDir,
@@ -30,14 +30,14 @@ describe("variable", () => {
   });
 
   it("get() uses default when no set/env/context", async () => {
-    const v = senv("Core Server URL", { default: "localhost:7000" });
+    const v = scenv("Core Server URL", { default: "localhost:7000" });
     const value = await v.get();
     expect(value).toBe("localhost:7000");
   });
 
   it("get() uses config.set override", async () => {
     configure({ set: { core_server_url: "https://api.example.com" } });
-    const v = senv("Core Server URL", { default: "localhost:7000" });
+    const v = scenv("Core Server URL", { default: "localhost:7000" });
     const value = await v.get();
     expect(value).toBe("https://api.example.com");
   });
@@ -45,7 +45,7 @@ describe("variable", () => {
   it("get() uses env when not ignoreEnv", async () => {
     configure({ ignoreEnv: false });
     process.env.CORE_SERVER_URL = "https://env.example.com";
-    const v = senv("Core Server URL", { default: "localhost:7000" });
+    const v = scenv("Core Server URL", { default: "localhost:7000" });
     const value = await v.get();
     expect(value).toBe("https://env.example.com");
     delete process.env.CORE_SERVER_URL;
@@ -58,32 +58,32 @@ describe("variable", () => {
       JSON.stringify({ core_server_url: "https://ctx.example.com" })
     );
     configure({ ignoreContext: false, contexts: ["prod"] });
-    const v = senv("Core Server URL", { default: "localhost:7000" });
+    const v = scenv("Core Server URL", { default: "localhost:7000" });
     const value = await v.get();
     expect(value).toBe("https://ctx.example.com");
   });
 
   it("get() throws when missing value and no default", async () => {
-    const v = senv("Required Var", { key: "required_var" });
+    const v = scenv("Required Var", { key: "required_var" });
     await expect(v.get()).rejects.toThrow(/Missing value/);
   });
 
   it("safeGet() returns success with value", async () => {
-    const v = senv("X", { default: "ok" });
+    const v = scenv("X", { default: "ok" });
     const result = await v.safeGet();
     expect(result.success).toBe(true);
     if (result.success) expect(result.value).toBe("ok");
   });
 
   it("safeGet() returns failure without throwing", async () => {
-    const v = senv("Required Var", { key: "required_var" });
+    const v = scenv("Required Var", { key: "required_var" });
     const result = await v.safeGet();
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error).toBeDefined();
   });
 
   it("validator receives value and can reject", async () => {
-    const v = senv("Port", {
+    const v = scenv("Port", {
       default: "3000",
       validator: (val) => {
         const n = Number(val);
@@ -93,7 +93,7 @@ describe("variable", () => {
     const value = await v.get();
     expect(value).toBe("3000");
     configure({ set: { port: "99999" } });
-    const v2 = senv("Port", {
+    const v2 = scenv("Port", {
       key: "port",
       validator: (val) => {
         const n = Number(val);
@@ -105,7 +105,7 @@ describe("variable", () => {
 
   it("save() writes to context file", async () => {
     configure({ saveContextTo: "mysave", contexts: ["mysave"] });
-    const v = senv("Saved Key", { key: "saved_key", default: "saved-value" });
+    const v = scenv("Saved Key", { key: "saved_key", default: "saved-value" });
     await v.save();
     const ctxPath = join(tmpDir, "mysave.context.json");
     const content = readFileSync(ctxPath, "utf-8");
@@ -115,7 +115,7 @@ describe("variable", () => {
 
   it("get() uses custom prompt when prompt mode is always", async () => {
     configure({ prompt: "always" });
-    const v = senv("Prompted Var", {
+    const v = scenv("Prompted Var", {
       key: "prompted_var",
       default: "default-val",
       prompt: (name, defaultVal) => {
@@ -130,7 +130,7 @@ describe("variable", () => {
 
   it("get() uses custom prompt when prompt mode fallback and no value", async () => {
     configure({ prompt: "fallback" });
-    const v = senv("Fallback Var", {
+    const v = scenv("Fallback Var", {
       key: "fallback_var",
       prompt: () => "fallback-typed",
     });
@@ -140,7 +140,7 @@ describe("variable", () => {
 
   it("get() prompts when prompt mode fallback and only default exists (no set/env/context)", async () => {
     configure({ prompt: "fallback" });
-    const v = senv("Core Server URL", {
+    const v = scenv("Core Server URL", {
       key: "core_server_url",
       env: "CORE_SERVER_URL",
       default: "http://localhost:3000",
@@ -153,7 +153,7 @@ describe("variable", () => {
   it("get() does not prompt when prompt mode fallback and value from env", async () => {
     configure({ prompt: "fallback", ignoreEnv: false });
     process.env.CORE_SERVER_URL = "https://env.example.com";
-    const v = senv("Core Server URL", {
+    const v = scenv("Core Server URL", {
       key: "core_server_url",
       env: "CORE_SERVER_URL",
       default: "http://localhost:3000",
@@ -180,7 +180,7 @@ describe("variable", () => {
         },
       },
     });
-    const v = senv("Save Me", {
+    const v = scenv("Save Me", {
       key: "save_me",
       prompt: () => "saved-value",
     });
@@ -201,7 +201,7 @@ describe("variable", () => {
         onAskSaveAfterPrompt: async () => null,
       },
     });
-    const v = senv("No Save", { key: "no_save", prompt: () => "x" });
+    const v = scenv("No Save", { key: "no_save", prompt: () => "x" });
     const value = await v.get();
     expect(value).toBe("x");
     const ctxPath = join(tmpDir, "ctx1.context.json");
@@ -220,7 +220,7 @@ describe("variable", () => {
         },
       },
     });
-    const v = senv("Ask Context Var", {
+    const v = scenv("Ask Context Var", {
       key: "ask_context_var",
       default: "val",
     });
@@ -233,7 +233,7 @@ describe("variable", () => {
 
   it("save() uses first context when saveContextTo is ask and no onAskContext", async () => {
     configure({ saveContextTo: "ask", contexts: ["first-ctx"] });
-    const v = senv("No Callback", { key: "no_callback", default: "v" });
+    const v = scenv("No Callback", { key: "no_callback", default: "v" });
     await v.save();
     const ctxPath = join(tmpDir, "first-ctx.context.json");
     const content = readFileSync(ctxPath, "utf-8");

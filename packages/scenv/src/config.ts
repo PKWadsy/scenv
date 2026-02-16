@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 export type PromptMode = "always" | "never" | "fallback" | "no-env";
 export type SavePromptMode = "always" | "never" | "ask";
 
-export interface SenvConfig {
+export interface ScenvConfig {
   /** Replace all contexts with this list (CLI: --context a,b,c) */
   contexts?: string[];
   /** Merge these contexts with existing (CLI: --add-context a,b,c) */
@@ -26,21 +26,21 @@ export interface SenvConfig {
   root?: string;
 }
 
-const CONFIG_FILENAME = "senv.config.json";
+const CONFIG_FILENAME = "scenv.config.json";
 
-const envKeyMap: Record<string, keyof SenvConfig> = {
-  SENV_CONTEXT: "contexts",
-  SENV_ADD_CONTEXTS: "addContexts",
-  SENV_PROMPT: "prompt",
-  SENV_IGNORE_ENV: "ignoreEnv",
-  SENV_IGNORE_CONTEXT: "ignoreContext",
-  SENV_SAVE_PROMPT: "savePrompt",
-  SENV_SAVE_CONTEXT_TO: "saveContextTo",
+const envKeyMap: Record<string, keyof ScenvConfig> = {
+  SCENV_CONTEXT: "contexts",
+  SCENV_ADD_CONTEXTS: "addContexts",
+  SCENV_PROMPT: "prompt",
+  SCENV_IGNORE_ENV: "ignoreEnv",
+  SCENV_IGNORE_CONTEXT: "ignoreContext",
+  SCENV_SAVE_PROMPT: "savePrompt",
+  SCENV_SAVE_CONTEXT_TO: "saveContextTo",
 };
 
-let programmaticConfig: Partial<SenvConfig> = {};
+let programmaticConfig: Partial<ScenvConfig> = {};
 
-export interface SenvCallbacks {
+export interface ScenvCallbacks {
   /** When user was just prompted for a value and savePrompt is ask/always: (variableName, value, contextNames) => context name to save to, or null to skip */
   onAskSaveAfterPrompt?: (
     name: string,
@@ -53,14 +53,14 @@ export interface SenvCallbacks {
     contextNames: string[]
   ) => Promise<string>;
 }
-let programmaticCallbacks: SenvCallbacks = {};
+let programmaticCallbacks: ScenvCallbacks = {};
 
-export function getCallbacks(): SenvCallbacks {
+export function getCallbacks(): ScenvCallbacks {
   return { ...programmaticCallbacks };
 }
 
 /**
- * Find senv.config.json by searching upward from dir.
+ * Find scenv.config.json by searching upward from dir.
  */
 function findConfigDir(startDir: string): string | null {
   let dir = startDir;
@@ -75,10 +75,10 @@ function findConfigDir(startDir: string): string | null {
 }
 
 /**
- * Load config from process.env (SENV_*). Values are strings; we coerce booleans and pass through strings.
+ * Load config from process.env (SCENV_*). Values are strings; we coerce booleans and pass through strings.
  */
-function configFromEnv(): Partial<SenvConfig> {
-  const out: Partial<SenvConfig> = {};
+function configFromEnv(): Partial<ScenvConfig> {
+  const out: Partial<ScenvConfig> = {};
   for (const [envKey, configKey] of Object.entries(envKeyMap)) {
     const val = process.env[envKey];
     if (val === undefined || val === "") continue;
@@ -110,15 +110,15 @@ function configFromEnv(): Partial<SenvConfig> {
 }
 
 /**
- * Load senv.config.json from the given directory. Returns partial config or {}.
+ * Load scenv.config.json from the given directory. Returns partial config or {}.
  */
-function loadConfigFile(configDir: string): Partial<SenvConfig> {
+function loadConfigFile(configDir: string): Partial<ScenvConfig> {
   const path = join(configDir, CONFIG_FILENAME);
   if (!existsSync(path)) return {};
   try {
     const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    const out: Partial<SenvConfig> = {};
+    const out: Partial<ScenvConfig> = {};
     if (Array.isArray(parsed.contexts))
       out.contexts = parsed.contexts.filter(
         (x): x is string => typeof x === "string"
@@ -155,9 +155,9 @@ function loadConfigFile(configDir: string): Partial<SenvConfig> {
  * Merge context lists: replace (contexts) wins over add (addContexts). Precedence: programmatic > env > file.
  */
 function mergeContexts(
-  fileConfig: Partial<SenvConfig>,
-  envConfig: Partial<SenvConfig>,
-  progConfig: Partial<SenvConfig>
+  fileConfig: Partial<ScenvConfig>,
+  envConfig: Partial<ScenvConfig>,
+  progConfig: Partial<ScenvConfig>
 ): string[] {
   const fromFile = fileConfig.contexts ?? fileConfig.addContexts ?? [];
   const fromEnvAdd = envConfig.addContexts ?? [];
@@ -182,21 +182,21 @@ function mergeContexts(
 /**
  * Load full config: file (from root or cwd) <- env <- programmatic. Precedence: programmatic > env > file.
  */
-export function loadConfig(root?: string): SenvConfig {
+export function loadConfig(root?: string): ScenvConfig {
   const startDir =
     root ?? programmaticConfig.root ?? process.cwd();
   const configDir = findConfigDir(startDir);
   const fileConfig = configDir ? loadConfigFile(configDir) : {};
   const envConfig = configFromEnv();
 
-  const merged: SenvConfig = {
+  const merged: ScenvConfig = {
     ...fileConfig,
     ...envConfig,
     ...programmaticConfig,
   };
 
   merged.contexts = mergeContexts(fileConfig, envConfig, programmaticConfig);
-  delete (merged as Partial<SenvConfig>).addContexts;
+  delete (merged as Partial<ScenvConfig>).addContexts;
 
   if (configDir && !merged.root) merged.root = configDir;
   else if (!merged.root) merged.root = startDir;
@@ -208,7 +208,7 @@ export function loadConfig(root?: string): SenvConfig {
  * Set programmatic config (e.g. from CLI flags). Merged on top of env and file in loadConfig().
  */
 export function configure(
-  partial: Partial<SenvConfig> & { callbacks?: SenvCallbacks }
+  partial: Partial<ScenvConfig> & { callbacks?: ScenvCallbacks }
 ): void {
   const { callbacks, ...configPartial } = partial;
   programmaticConfig = { ...programmaticConfig, ...configPartial };

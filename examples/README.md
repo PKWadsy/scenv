@@ -16,10 +16,10 @@ cd examples/<name> && pnpm start
 |--------|----------------|
 | **basic** | Simple variable, default + env, `get()` and `safeGet()`. |
 | **with-zod** | Validation with `scenv-zod` and Zod (port number, boolean). |
-| **cli-integration** | `parseSenvArgs(process.argv)` + `configure()` so `--set`, `--prompt`, `--context` apply. |
+| **cli-integration** | `parseScenvArgs(process.argv)` + `configure()` so `--set`, `--prompt`, `--context` apply. |
 | **full-demo** | Config file, context discovery, merged context values, resolution order, validation, `safeGet()` failure, optional save to context. Multiple npm scripts for different scenarios. |
 | **contexts** | Context merge order: `base` then `overlay`; later overwrites earlier. Try `pnpm run start:overlay-first` for `--context overlay,base` (base wins where both set). |
-| **with-config-file** | All config from `senv.config.json` (no programmatic config); env overlays. |
+| **with-config-file** | All config from `scenv.config.json` (no programmatic config); env overlays. |
 | **save-flow** | `variable.save()`, `saveContextTo: "ask"`, `onAskContext` and `onAskSaveAfterPrompt` callbacks (non-interactive). |
 
 ## Full demo (recommended)
