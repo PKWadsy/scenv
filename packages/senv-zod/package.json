@@ -2,6 +2,8 @@
   "name": "senv-zod",
   "version": "0.1.0",
   "description": "Zod validator for senv variables",
+  "repository": { "type": "git", "url": "git+https://github.com/PKWadsy/senv.git" },
+  "keywords": ["senv", "zod", "validation"],
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
