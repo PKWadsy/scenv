@@ -102,17 +102,19 @@ export function askContext(): (
 }
 
 /**
- * Returns an object suitable for scenv's configure(): { callbacks: { onAskSaveAfterPrompt, onAskContext } }.
- * Use as configure(callbacks()) or configure({ ...config, ...callbacks() }) to wire both save-after-prompt and ask-context via inquirer.
+ * Returns an object suitable for scenv's configure(): { callbacks: { defaultPrompt, onAskSaveAfterPrompt, onAskContext } }.
+ * Use as configure(callbacks()) or configure({ ...config, ...callbacks() }) to wire a default inquirer prompt for variables and save/context prompts via inquirer. Variable-level prompt overrides defaultPrompt.
  */
 export function callbacks(): {
   callbacks: {
+    defaultPrompt: ReturnType<typeof prompt>;
     onAskSaveAfterPrompt: ReturnType<typeof askSaveAfterPrompt>;
     onAskContext: ReturnType<typeof askContext>;
   };
 } {
   return {
     callbacks: {
+      defaultPrompt: prompt(),
       onAskSaveAfterPrompt: askSaveAfterPrompt(),
       onAskContext: askContext(),
     },

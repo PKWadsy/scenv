@@ -59,23 +59,25 @@ const api_url = scenv("API URL", {
 });
 ```
 
+You can also set **`callbacks.defaultPrompt`** so that inquirer is used for every variable that doesn’t specify its own `prompt`; the variable’s `prompt` option then overrides the default. Example: `configure({ callbacks: { defaultPrompt: prompt() } })`.
+
 Install: `pnpm add scenv scenv-inquirer inquirer`.
 
 ### Using scenv-inquirer for save and context prompts
 
-When `savePrompt` is `"ask"` or `saveContextTo` is `"ask"`, scenv calls optional callbacks (`onAskSaveAfterPrompt`, `onAskContext`). You can wire inquirer-based implementations in one go with **`callbacks()`**:
+**`callbacks()`** returns `{ callbacks: { defaultPrompt, onAskSaveAfterPrompt, onAskContext } }` so one call wires inquirer as the default prompt for variables (when they don’t specify their own `prompt`) and for save/context asks:
 
 ```ts
 import { configure } from "scenv";
 import { prompt, callbacks } from "scenv-inquirer";
 
-// Wire both save-after-prompt and ask-context via inquirer
+// Inquirer for variable values (default), save-after-prompt, and ask-context
 configure(callbacks());
 // Or merge with other config:
 configure({ ...yourConfig, ...callbacks() });
 ```
 
-Then `SCENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` will prompt the user interactively (save for next time? which context?). You can also wire a single callback: `configure({ callbacks: { onAskSaveAfterPrompt: askSaveAfterPrompt() } })` using the exported `askSaveAfterPrompt` and `askContext` helpers.
+Variable-level `prompt` overrides `defaultPrompt`. Then `SCENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` prompt interactively. You can also wire a single callback: `configure({ callbacks: { defaultPrompt: prompt() } })` or use `askSaveAfterPrompt()` / `askContext()`.
 
 ---
 

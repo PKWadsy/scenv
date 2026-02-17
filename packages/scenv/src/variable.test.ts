@@ -138,6 +138,45 @@ describe("variable", () => {
     expect(value).toBe("fallback-typed");
   });
 
+  it("get() uses callbacks.defaultPrompt when variable has no prompt option", async () => {
+    configure({
+      prompt: "fallback",
+      callbacks: {
+        defaultPrompt: async (name, defaultVal) => {
+          expect(name).toBe("No Var Prompt");
+          expect(defaultVal).toBe("default-from-callback");
+          return "from-default-prompt";
+        },
+      },
+    });
+    const v = scenv("No Var Prompt", {
+      key: "no_var_prompt",
+      default: "default-from-callback",
+    });
+    const value = await v.get();
+    expect(value).toBe("from-default-prompt");
+  });
+
+  it("get() uses variable prompt (override) over callbacks.defaultPrompt", async () => {
+    const defaultPromptCalled: string[] = [];
+    configure({
+      prompt: "fallback",
+      callbacks: {
+        defaultPrompt: async (name) => {
+          defaultPromptCalled.push(name);
+          return "from-callbacks-default";
+        },
+      },
+    });
+    const v = scenv("Override Prompt", {
+      key: "override_prompt",
+      prompt: () => "from-var-override",
+    });
+    const value = await v.get();
+    expect(value).toBe("from-var-override");
+    expect(defaultPromptCalled).toEqual([]);
+  });
+
   it("get() prompts when prompt mode fallback and only default exists (no set/env/context)", async () => {
     configure({ prompt: "fallback" });
     const v = scenv("Core Server URL", {

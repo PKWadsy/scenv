@@ -5,6 +5,7 @@ export {
   getCallbacks,
   type ScenvConfig,
   type ScenvCallbacks,
+  type DefaultPromptFn,
   type PromptMode,
   type SavePromptMode,
 } from "./config.js";

@@ -40,7 +40,15 @@ const envKeyMap: Record<string, keyof ScenvConfig> = {
 
 let programmaticConfig: Partial<ScenvConfig> = {};
 
+/** (name, defaultValue) => value; used when a variable has no prompt option. Overridable per variable. */
+export type DefaultPromptFn = (
+  name: string,
+  defaultValue: unknown
+) => unknown | Promise<unknown>;
+
 export interface ScenvCallbacks {
+  /** Default prompt when a variable does not provide its own `prompt`. Variable's `prompt` overrides this. */
+  defaultPrompt?: DefaultPromptFn;
   /** When user was just prompted for a value and savePrompt is ask/always: (variableName, value, contextNames) => context name to save to, or null to skip */
   onAskSaveAfterPrompt?: (
     name: string,

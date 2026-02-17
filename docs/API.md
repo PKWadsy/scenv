@@ -28,7 +28,7 @@ Merges config and optional callbacks into the programmatic layer. Precedence: pr
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
   - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `savePrompt`, `saveContextTo`, `root`.
-  - **callbacks**: `{ onAskSaveAfterPrompt?, onAskContext? }` (see [Saving](SAVING.md)).
+  - **callbacks**: `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). See [Saving](SAVING.md) for the others.
 
 ---
 
@@ -50,7 +50,7 @@ Clears programmatic config and callbacks. Mainly for tests.
 
 ### `getCallbacks()`
 
-Returns a copy of the currently configured callbacks (`onAskSaveAfterPrompt`, `onAskContext`).
+Returns a copy of the currently configured callbacks (`defaultPrompt`, `onAskSaveAfterPrompt`, `onAskContext`).
 
 ---
 
@@ -96,5 +96,6 @@ Recursively finds all `*.context.json` files under `dir`.
 - **ScenvConfig** – Full config shape (see [Configuration](CONFIGURATION.md)).
 - **PromptMode** – `"always" | "never" | "fallback" | "no-env"`.
 - **SavePromptMode** – `"always" | "never" | "ask"`.
-- **ScenvCallbacks** – `{ onAskSaveAfterPrompt?, onAskContext? }`.
+- **ScenvCallbacks** – `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`.
+- **DefaultPromptFn** – `(name, defaultValue) => value | Promise<value>`. Used as default when a variable has no `prompt`.
 - **ScenvVariable&lt;T&gt;** – `{ get(), safeGet(), save(value?) }`.

@@ -130,4 +130,12 @@ describe("config", () => {
     expect(cb.onAskContext).toBe(askContext);
     resetConfig();
   });
+
+  it("configure with callbacks merges defaultPrompt", () => {
+    const defaultPrompt = async (name: string) => name;
+    configure({ root: tmpDir, callbacks: { defaultPrompt } });
+    const cb = getCallbacks();
+    expect(cb.defaultPrompt).toBe(defaultPrompt);
+    resetConfig();
+  });
 });

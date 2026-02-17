@@ -101,8 +101,9 @@ export function scenv<T>(
     if (shouldPrompt(config, hadValue, hadEnv)) {
       const defaultForPrompt =
         raw !== undefined ? (raw as unknown as T) : defaultValue;
-      const fn = promptFn ?? defaultPrompt;
-      value = await Promise.resolve(fn(name, defaultForPrompt as T));
+      const callbacks = getCallbacks();
+      const fn = promptFn ?? callbacks.defaultPrompt ?? defaultPrompt;
+      value = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
       wasPrompted = true;
     } else if (raw !== undefined) {
       value = raw as unknown as T;
