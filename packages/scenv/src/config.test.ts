@@ -138,4 +138,42 @@ describe("config", () => {
     expect(cb.defaultPrompt).toBe(defaultPrompt);
     resetConfig();
   });
+
+  it("loadConfig reads logLevel from file", () => {
+    writeFileSync(
+      join(tmpDir, "scenv.config.json"),
+      JSON.stringify({ logLevel: "debug" })
+    );
+    const config = loadConfig(tmpDir);
+    expect(config.logLevel).toBe("debug");
+  });
+
+  it("env SCENV_LOG_LEVEL overlays file", () => {
+    writeFileSync(
+      join(tmpDir, "scenv.config.json"),
+      JSON.stringify({ logLevel: "info" })
+    );
+    process.env.SCENV_LOG_LEVEL = "warn";
+    const config = loadConfig(tmpDir);
+    expect(config.logLevel).toBe("warn");
+    delete process.env.SCENV_LOG_LEVEL;
+  });
+
+  it("configure logLevel has precedence over env", () => {
+    process.env.SCENV_LOG_LEVEL = "error";
+    configure({ logLevel: "trace", root: tmpDir });
+    const config = loadConfig(tmpDir);
+    expect(config.logLevel).toBe("trace");
+    delete process.env.SCENV_LOG_LEVEL;
+    resetConfig();
+  });
+
+  it("logLevel none is valid", () => {
+    writeFileSync(
+      join(tmpDir, "scenv.config.json"),
+      JSON.stringify({ logLevel: "none" })
+    );
+    const config = loadConfig(tmpDir);
+    expect(config.logLevel).toBe("none");
+  });
 });

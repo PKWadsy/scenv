@@ -1,5 +1,6 @@
 import { loadConfig, getCallbacks } from "./config.js";
 import { getContextValues, writeToContext } from "./context.js";
+import { log, logConfigLoaded } from "./log.js";
 
 export type ValidatorResult<T> =
   | boolean
@@ -63,18 +64,36 @@ export function scenv<T>(
   const promptFn = options.prompt;
   const defaultValue = options.default;
 
-  async function resolveRaw(): Promise<string | undefined> {
+  type ResolveSource = "set" | "env" | "context";
+
+  async function resolveRaw(): Promise<{
+    raw: string | undefined;
+    source: ResolveSource | undefined;
+  }> {
     const config = loadConfig();
-    if (config.set?.[key] !== undefined) return config.set[key];
+    log("trace", `resolveRaw: checking set for key=${key}`);
+    if (config.set?.[key] !== undefined) {
+      log("trace", `resolveRaw: set hit key=${key}`);
+      return { raw: config.set[key], source: "set" };
+    }
     if (!config.ignoreEnv) {
+      log("trace", `resolveRaw: checking env ${envKey}`);
       const envVal = process.env[envKey];
-      if (envVal !== undefined && envVal !== "") return envVal;
+      if (envVal !== undefined && envVal !== "") {
+        log("trace", "resolveRaw: env hit");
+        return { raw: envVal, source: "env" };
+      }
     }
     if (!config.ignoreContext) {
+      log("trace", "resolveRaw: checking context");
       const ctx = getContextValues();
-      if (ctx[key] !== undefined) return ctx[key];
+      if (ctx[key] !== undefined) {
+        log("trace", `resolveRaw: context hit key=${key}`);
+        return { raw: ctx[key], source: "context" };
+      }
     }
-    return undefined;
+    log("trace", "resolveRaw: no value");
+    return { raw: undefined, source: undefined };
   }
 
   function shouldPrompt(
@@ -99,16 +118,23 @@ export function scenv<T>(
     wasPrompted: boolean;
   }> {
     const config = loadConfig();
-    const raw = await resolveRaw();
+    logConfigLoaded(config);
+    const { raw, source } = await resolveRaw();
     const hadEnv =
       !config.ignoreEnv &&
       process.env[envKey] !== undefined &&
       process.env[envKey] !== "";
     const hadValue = raw !== undefined;
+    const doPrompt = shouldPrompt(config, hadValue, hadEnv);
+    log(
+      "debug",
+      `prompt decision key=${key} prompt=${config.prompt ?? "fallback"} hadValue=${hadValue} hadEnv=${hadEnv} -> ${doPrompt ? "prompt" : "no prompt"}`
+    );
     const effectiveDefault = overrides?.default !== undefined ? overrides.default : defaultValue;
     let wasPrompted = false;
     let value: T;
-    if (shouldPrompt(config, hadValue, hadEnv)) {
+    let resolvedFrom: ResolveSource | "default" | "prompt";
+    if (doPrompt) {
       const callbacks = getCallbacks();
       const fn =
         overrides?.prompt ?? promptFn ?? callbacks.defaultPrompt;
@@ -121,13 +147,17 @@ export function scenv<T>(
         raw !== undefined ? (raw as unknown as T) : effectiveDefault;
       value = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
       wasPrompted = true;
+      resolvedFrom = "prompt";
     } else if (raw !== undefined) {
       value = raw as unknown as T;
+      resolvedFrom = source!;
     } else if (effectiveDefault !== undefined) {
       value = effectiveDefault;
+      resolvedFrom = "default";
     } else {
       throw new Error(`Missing value for variable "${name}" (key: ${key})`);
     }
+    log("info", `variable "${name}" (key=${key}) resolved from ${resolvedFrom}`);
     return { value, raw, hadEnv, wasPrompted };
   }
 
@@ -151,9 +181,9 @@ export function scenv<T>(
     const { value, wasPrompted } = await getResolvedValue(options);
     const validated = validate(value);
     if (!validated.success) {
-      throw new Error(
-        `Validation failed for "${name}": ${validated.error ?? "unknown"}`
-      );
+      const errMsg = `Validation failed for "${name}": ${validated.error ?? "unknown"}`;
+      log("error", errMsg);
+      throw new Error(errMsg);
     }
     const final = validated.data;
     if (wasPrompted) {
@@ -173,7 +203,10 @@ export function scenv<T>(
           final,
           config.contexts ?? []
         );
-        if (ctxToSave) writeToContext(ctxToSave, key, String(final));
+        if (ctxToSave) {
+          writeToContext(ctxToSave, key, String(final));
+          log("info", `Saved key=${key} to context ${ctxToSave}`);
+        }
       }
     }
     return final;
@@ -194,9 +227,9 @@ export function scenv<T>(
     const toSave = value ?? (await getResolvedValue()).value;
     const validated = validate(toSave);
     if (!validated.success) {
-      throw new Error(
-        `Validation failed for "${name}": ${validated.error ?? "unknown"}`
-      );
+      const errMsg = `Validation failed for "${name}": ${validated.error ?? "unknown"}`;
+      log("error", errMsg);
+      throw new Error(errMsg);
     }
     const config = loadConfig();
     let contextName: string | undefined = config.saveContextTo;
@@ -214,6 +247,7 @@ export function scenv<T>(
     }
     if (!contextName) contextName = config.contexts?.[0] ?? "default";
     writeToContext(contextName, key, String(validated.data));
+    log("info", `Saved key=${key} to context ${contextName}`);
   }
 
   return { get, safeGet, save };

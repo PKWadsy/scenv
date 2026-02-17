@@ -8,6 +8,8 @@ import {
   discoverContextPaths,
   scenv,
   parseScenvArgs,
+  resetLogState,
+  LOG_LEVELS,
 } from "./index.js";
 
 describe("index", () => {
@@ -35,5 +37,10 @@ describe("index", () => {
     expect(v.safeGet).toBeDefined();
     expect(v.save).toBeDefined();
     expect(parseScenvArgs([])).toEqual({});
+  });
+
+  it("re-exports resetLogState and LOG_LEVELS", () => {
+    expect(typeof resetLogState).toBe("function");
+    expect(LOG_LEVELS).toEqual(["none", "trace", "debug", "info", "warn", "error"]);
   });
 });

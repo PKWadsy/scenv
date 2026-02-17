@@ -27,6 +27,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 | `savePrompt` | `"always"` \| `"never"` \| `"ask"` | When to ask “save for next time?” after the user is prompted for a value; see [Saving](SAVING.md). |
 | `saveContextTo` | `"ask"` \| `string` | Where to save when writing a variable: a context name, or `"ask"` to use the callback. |
 | `root` | `string` | Directory used as root for config and context search (optional). |
+| `logLevel` | `"none"` \| `"trace"` \| `"debug"` \| `"info"` \| `"warn"` \| `"error"` | Logging level; default is `none` (no logs). Logs go to stderr. |
 
 ### Example
 
@@ -55,6 +56,7 @@ Any of the config keys above can be set via environment variables. The mapping i
 | `SCENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
 | `SCENV_SAVE_PROMPT` | `savePrompt` | `always`, `never`, `ask`. |
 | `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Context name or `ask`. |
+| `SCENV_LOG_LEVEL` | `logLevel` | `none`, `trace`, `debug`, `info`, `warn`, `error`. |
 
 Examples:
 

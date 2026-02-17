@@ -1,9 +1,10 @@
 import type { ScenvConfig } from "./config.js";
+import { LOG_LEVELS, type LogLevel } from "./config.js";
 
 /**
  * Parse argv (e.g. process.argv.slice(2)) into ScenvConfig for configure().
  * Supports: --context a,b,c --add-context x,y --prompt fallback --ignore-env --ignore-context
- * --set key=value --save-prompt ask --save-context-to prod
+ * --set key=value --save-prompt ask --save-context-to prod --log-level trace
  */
 export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
   const config: Partial<ScenvConfig> = {};
@@ -37,6 +38,16 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
       }
     } else if (arg === "--save-context-to" && argv[i + 1] !== undefined) {
       config.saveContextTo = argv[++i];
+    } else if ((arg === "--log-level" || arg === "--log") && argv[i + 1] !== undefined) {
+      const v = argv[++i].toLowerCase() as LogLevel;
+      if (LOG_LEVELS.includes(v)) {
+        config.logLevel = v;
+      }
+    } else if (arg.startsWith("--log=")) {
+      const v = arg.slice(6).toLowerCase() as LogLevel;
+      if (LOG_LEVELS.includes(v)) {
+        config.logLevel = v;
+      }
     } else if (arg.startsWith("--set=")) {
       const pair = arg.slice(6);
       const eq = pair.indexOf("=");

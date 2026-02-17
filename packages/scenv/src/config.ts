@@ -5,6 +5,9 @@ import { fileURLToPath } from "node:url";
 export type PromptMode = "always" | "never" | "fallback" | "no-env";
 export type SavePromptMode = "always" | "never" | "ask";
 
+export const LOG_LEVELS = ["none", "trace", "debug", "info", "warn", "error"] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
+
 export interface ScenvConfig {
   /** Replace all contexts with this list (CLI: --context a,b,c) */
   contexts?: string[];
@@ -24,6 +27,8 @@ export interface ScenvConfig {
   saveContextTo?: "ask" | string;
   /** Root directory for config/context search (default: cwd) */
   root?: string;
+  /** Log level: none (default), trace, debug, info, warn, error */
+  logLevel?: LogLevel;
 }
 
 const CONFIG_FILENAME = "scenv.config.json";
@@ -36,6 +41,7 @@ const envKeyMap: Record<string, keyof ScenvConfig> = {
   SCENV_IGNORE_CONTEXT: "ignoreContext",
   SCENV_SAVE_PROMPT: "savePrompt",
   SCENV_SAVE_CONTEXT_TO: "saveContextTo",
+  SCENV_LOG_LEVEL: "logLevel",
 };
 
 let programmaticConfig: Partial<ScenvConfig> = {};
@@ -112,6 +118,9 @@ function configFromEnv(): Partial<ScenvConfig> {
         (out as Record<string, SavePromptMode>)[configKey] = v as SavePromptMode;
     } else if (configKey === "saveContextTo") {
       out.saveContextTo = val;
+    } else if (configKey === "logLevel") {
+      const v = val.toLowerCase();
+      if (LOG_LEVELS.includes(v as LogLevel)) out.logLevel = v as LogLevel;
     }
   }
   return out;
@@ -153,8 +162,23 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
     if (typeof parsed.saveContextTo === "string")
       out.saveContextTo = parsed.saveContextTo;
     if (typeof parsed.root === "string") out.root = parsed.root;
+    if (
+      typeof parsed.logLevel === "string" &&
+      LOG_LEVELS.includes(parsed.logLevel as LogLevel)
+    )
+      out.logLevel = parsed.logLevel as LogLevel;
     return out;
-  } catch {
+  } catch (err) {
+    const envLevel = process.env.SCENV_LOG_LEVEL?.toLowerCase();
+    if (
+      envLevel &&
+      envLevel !== "none" &&
+      ["trace", "debug", "info", "warn", "error"].includes(envLevel)
+    ) {
+      console.error(
+        `[scenv] error: failed to parse ${path}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
     return {};
   }
 }

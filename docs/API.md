@@ -27,7 +27,7 @@ Creates a scenv variable.
 Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file. You can call `configure()` multiple times; each call is **merged (shallow)** with the previous programmatic config and callbacks—later values overwrite earlier for the same key; objects like `set` and `callbacks` are replaced, not deep-merged.
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
-  - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `savePrompt`, `saveContextTo`, `root`.
+  - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `savePrompt`, `saveContextTo`, `root`, `logLevel`.
   - **callbacks**: `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). See [Saving](SAVING.md) for the others.
 
 ---
@@ -44,7 +44,13 @@ Returns the fully merged config.
 
 ### `resetConfig()`
 
-Clears programmatic config and callbacks. Mainly for tests.
+Clears programmatic config and callbacks. Mainly for tests. For tests that change log level, you may also call `resetLogState()` to reset the internal config-loaded log guard.
+
+---
+
+### `resetLogState()`
+
+Resets internal log state (e.g. the “config loaded” one-time log guard). Useful in tests after `resetConfig()` when asserting on log output.
 
 ---
 
@@ -69,6 +75,7 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 - `--set=key=value`
 - `--save-prompt always|never|ask`
 - `--save-context-to name`
+- `--log-level level` / `--log level` / `--log=level` – Log level: `none` (default), `trace`, `debug`, `info`, `warn`, `error`.
 
 **Returns:** `Partial<ScenvConfig>`.
 
@@ -94,6 +101,7 @@ Recursively finds all `*.context.json` files under `dir`.
 ## Types
 
 - **ScenvConfig** – Full config shape (see [Configuration](CONFIGURATION.md)).
+- **LogLevel** – `"none" | "trace" | "debug" | "info" | "warn" | "error"`. Default is `none` (no logging).
 - **PromptMode** – `"always" | "never" | "fallback" | "no-env"`.
 - **SavePromptMode** – `"always" | "never" | "ask"`.
 - **ScenvCallbacks** – `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`.

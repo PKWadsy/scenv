@@ -58,4 +58,11 @@ describe("parseScenvArgs", () => {
     const config = parseScenvArgs([]);
     expect(config).toEqual({});
   });
+
+  it("parses --log-level and --log=", () => {
+    expect(parseScenvArgs(["--log-level", "debug"]).logLevel).toBe("debug");
+    expect(parseScenvArgs(["--log", "info"]).logLevel).toBe("info");
+    expect(parseScenvArgs(["--log=warn"]).logLevel).toBe("warn");
+    expect(parseScenvArgs(["--log-level", "none"]).logLevel).toBe("none");
+  });
 });

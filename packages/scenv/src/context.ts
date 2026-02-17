@@ -7,6 +7,7 @@ import {
 } from "node:fs";
 import { join, dirname } from "node:path";
 import { loadConfig } from "./config.js";
+import { log, logConfigLoaded } from "./log.js";
 
 const CONTEXT_SUFFIX = ".context.json";
 
@@ -48,6 +49,12 @@ export function discoverContextPaths(
   found: Map<string, string> = new Map()
 ): Map<string, string> {
   discoverContextPathsInternal(dir, found);
+  log(
+    "debug",
+    "context discovery",
+    "dir=" + dir,
+    "found=" + JSON.stringify([...found.entries()].map(([n, p]) => ({ name: n, path: p })))
+  );
   return found;
 }
 
@@ -56,21 +63,33 @@ export function discoverContextPaths(
  */
 export function getContextValues(): Record<string, string> {
   const config = loadConfig();
+  logConfigLoaded(config);
   if (config.ignoreContext) return {};
   const root = config.root ?? process.cwd();
   const paths = discoverContextPaths(root);
   const out: Record<string, string> = {};
   for (const contextName of config.contexts ?? []) {
     const filePath = paths.get(contextName);
-    if (!filePath) continue;
+    if (!filePath) {
+      log("warn", `context "${contextName}" not found (no *.context.json)`);
+      continue;
+    }
     try {
       const raw = readFileSync(filePath, "utf-8");
       const data = JSON.parse(raw) as Record<string, unknown>;
+      const keys: string[] = [];
       for (const [k, v] of Object.entries(data)) {
-        if (typeof v === "string") out[k] = v;
+        if (typeof v === "string") {
+          out[k] = v;
+          keys.push(k);
+        }
       }
-    } catch {
-      // skip invalid or missing file
+      log("debug", `context "${contextName}" loaded keys=${JSON.stringify(keys)}`);
+    } catch (err) {
+      log(
+        "warn",
+        `context "${contextName}" unreadable or invalid JSON: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
   return out;
@@ -105,6 +124,7 @@ export function writeToContext(
     // new file
   }
   data[key] = value;
+  log("trace", "writeToContext", "path=" + path, "key=" + key);
   const dir = dirname(path);
   mkdirSync(dir, { recursive: true });
   writeFileSync(path, JSON.stringify(data, null, 2) + "\n", "utf-8");
