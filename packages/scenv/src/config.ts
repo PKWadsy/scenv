@@ -1,6 +1,10 @@
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import {
+  defaultPrompt as defaultPromptFn,
+  defaultAskSaveAfterPrompt,
+  defaultAskContext,
+} from "./prompt-default.js";
 
 export type PromptMode = "always" | "never" | "fallback" | "no-env";
 export type SavePromptMode = "always" | "never" | "ask";
@@ -70,7 +74,12 @@ export interface ScenvCallbacks {
 let programmaticCallbacks: ScenvCallbacks = {};
 
 export function getCallbacks(): ScenvCallbacks {
-  return { ...programmaticCallbacks };
+  return {
+    defaultPrompt: programmaticCallbacks.defaultPrompt ?? defaultPromptFn,
+    onAskSaveAfterPrompt:
+      programmaticCallbacks.onAskSaveAfterPrompt ?? defaultAskSaveAfterPrompt,
+    onAskContext: programmaticCallbacks.onAskContext ?? defaultAskContext,
+  };
 }
 
 /**

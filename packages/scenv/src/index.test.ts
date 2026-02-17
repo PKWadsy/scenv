@@ -21,7 +21,10 @@ describe("index", () => {
     const config = loadConfig();
     expect(config).toHaveProperty("root");
     expect(config).toHaveProperty("contexts");
-    expect(getCallbacks()).toEqual({});
+    const cb = getCallbacks();
+    expect(typeof cb.defaultPrompt).toBe("function");
+    expect(typeof cb.onAskSaveAfterPrompt).toBe("function");
+    expect(typeof cb.onAskContext).toBe("function");
   });
 
   it("re-exports getContextValues, discoverContextPaths", () => {

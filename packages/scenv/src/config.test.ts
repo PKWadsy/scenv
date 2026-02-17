@@ -123,6 +123,14 @@ describe("config", () => {
     delete process.env.SCENV_PROMPT;
   });
 
+  it("getCallbacks() returns default callbacks when none configured", () => {
+    resetConfig();
+    const cb = getCallbacks();
+    expect(typeof cb.defaultPrompt).toBe("function");
+    expect(typeof cb.onAskSaveAfterPrompt).toBe("function");
+    expect(typeof cb.onAskContext).toBe("function");
+  });
+
   it("configure with callbacks merges callbacks", () => {
     const askContext = async () => "ctx";
     configure({ root: tmpDir, callbacks: { onAskContext: askContext } });
