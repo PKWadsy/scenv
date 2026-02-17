@@ -1,8 +1,9 @@
 {
   "name": "scenv",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Environment and context variables with runtime-configurable resolution",
-  "repository": { "type": "git", "url": "git+https://github.com/PKWadsy/senv.git" },
+  "repository": { "type": "git", "url": "https://github.com/PKWadsy/scenv" },
+  "publishConfig": { "access": "public", "provenance": true },
   "keywords": ["env", "config", "context", "variables"],
   "type": "module",
   "main": "dist/index.cjs",

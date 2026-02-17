@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Load NPM_TOKEN from .env, then build and publish all publishable packages.
+ * Build and publish all publishable packages. Authentication:
+ * - If NPM_TOKEN is set (env or .env), uses it for publish.
+ * - If not set (e.g. CI with npm trusted publisher / OIDC), npm will use OIDC.
  * Usage: node scripts/publish-npm.mjs [--dry-run]
  */
 import { readFileSync, writeFileSync, rmSync, existsSync } from "node:fs";
@@ -13,19 +15,13 @@ const root = join(__dirname, "..");
 const dryRun = process.argv.includes("--dry-run");
 
 function loadEnv() {
+  if (process.env.NPM_TOKEN) return;
   const path = join(root, ".env");
-  if (!existsSync(path)) {
-    console.error("Missing .env file in repo root. Add NPM_TOKEN=...");
-    process.exit(1);
-  }
+  if (!existsSync(path)) return;
   const raw = readFileSync(path, "utf-8");
   for (const line of raw.split("\n")) {
     const m = line.match(/^([^#=]+)=(.*)$/);
     if (m) process.env[m[1].trim()] = m[2].trim();
-  }
-  if (!process.env.NPM_TOKEN) {
-    console.error("NPM_TOKEN not set in .env");
-    process.exit(1);
   }
 }
 
@@ -35,18 +31,20 @@ function run(cmd, args, opts = {}) {
 }
 
 const npmrcPath = join(root, ".npmrc");
-const npmrcContent = `//registry.npmjs.org/:_authToken=\${NPM_TOKEN}\n`;
 
 function main() {
   loadEnv();
-  writeFileSync(npmrcPath, `//registry.npmjs.org/:_authToken=${process.env.NPM_TOKEN}\n`);
+  const useToken = !!process.env.NPM_TOKEN;
+  if (useToken) {
+    writeFileSync(npmrcPath, `//registry.npmjs.org/:_authToken=${process.env.NPM_TOKEN}\n`);
+  }
   try {
     run("pnpm", ["build"]);
     const publishArgs = ["-r", "publish", "--no-git-checks", "--access", "public"];
     if (dryRun) publishArgs.push("--dry-run");
     run("pnpm", publishArgs);
   } finally {
-    if (existsSync(npmrcPath)) rmSync(npmrcPath);
+    if (useToken && existsSync(npmrcPath)) rmSync(npmrcPath);
   }
 }
 

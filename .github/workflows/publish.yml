@@ -1,0 +1,55 @@
+# Publish to npm when main is updated and a package version has been bumped.
+# Uses npm Trusted Publisher (OIDC). Job runs in Publish environment; set that
+# environment in each package's Trusted Publisher config on npm.com.
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: Publish
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          # Omit registry-url so npm uses OIDC (no .npmrc auth); default registry is registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish to npm (each package if its version was bumped)
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          for pkg in packages/scenv/package.json packages/scenv-inquirer/package.json packages/scenv-zod/package.json; do
+            [ ! -f "$pkg" ] && continue
+            dir="${pkg%/package.json}"
+            name=$(node -p "require('./$pkg').name")
+            private=$(node -p "require('./$pkg').private || false")
+            [ "$private" = "true" ] && continue
+            local=$(node -p "require('./$pkg').version")
+            published=$(npm view "$name" version 2>/dev/null || echo "0.0.0")
+            greater=$(printf '%s\n%s\n' "$local" "$published" | sort -V | tail -1)
+            if [ "$greater" = "$local" ] && [ "$local" != "$published" ]; then
+              echo "Publishing $name $published → $local"
+              (cd "$dir" && npm publish --access public)
+            else
+              echo "Skipping $name (local $local not greater than published $published)"
+            fi
+          done
