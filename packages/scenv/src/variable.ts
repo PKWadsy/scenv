@@ -38,9 +38,17 @@ export interface ScenvVariableOptions<T> {
   prompt?: PromptFn<T>;
 }
 
+/** Overrides for a single .get() or .safeGet() call. */
+export interface GetOptions<T> {
+  /** Use this prompt for this call instead of the variable's prompt or callbacks.defaultPrompt. */
+  prompt?: PromptFn<T>;
+  /** Use this as the default for this call if no value from set/env/context. */
+  default?: T;
+}
+
 export interface ScenvVariable<T> {
-  get(): Promise<T>;
-  safeGet(): Promise<
+  get(options?: GetOptions<T>): Promise<T>;
+  safeGet(options?: GetOptions<T>): Promise<
     { success: true; value: T } | { success: false; error?: unknown }
   >;
   save(value?: T): Promise<void>;
@@ -83,7 +91,9 @@ export function scenv<T>(
     return false;
   }
 
-  async function getResolvedValue(): Promise<{
+  async function getResolvedValue(
+    overrides?: GetOptions<T>
+  ): Promise<{
     value: T;
     raw: string | undefined;
     hadEnv: boolean;
@@ -96,19 +106,21 @@ export function scenv<T>(
       process.env[envKey] !== undefined &&
       process.env[envKey] !== "";
     const hadValue = raw !== undefined;
+    const effectiveDefault = overrides?.default !== undefined ? overrides.default : defaultValue;
     let wasPrompted = false;
     let value: T;
     if (shouldPrompt(config, hadValue, hadEnv)) {
       const defaultForPrompt =
-        raw !== undefined ? (raw as unknown as T) : defaultValue;
+        raw !== undefined ? (raw as unknown as T) : effectiveDefault;
       const callbacks = getCallbacks();
-      const fn = promptFn ?? callbacks.defaultPrompt ?? defaultPrompt;
+      const fn =
+        overrides?.prompt ?? promptFn ?? callbacks.defaultPrompt ?? defaultPrompt;
       value = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
       wasPrompted = true;
     } else if (raw !== undefined) {
       value = raw as unknown as T;
-    } else if (defaultValue !== undefined) {
-      value = defaultValue;
+    } else if (effectiveDefault !== undefined) {
+      value = effectiveDefault;
     } else {
       throw new Error(`Missing value for variable "${name}" (key: ${key})`);
     }
@@ -131,8 +143,8 @@ export function scenv<T>(
     };
   }
 
-  async function get(): Promise<T> {
-    const { value, wasPrompted } = await getResolvedValue();
+  async function get(options?: GetOptions<T>): Promise<T> {
+    const { value, wasPrompted } = await getResolvedValue(options);
     const validated = validate(value);
     if (!validated.success) {
       throw new Error(
@@ -160,11 +172,11 @@ export function scenv<T>(
     return final;
   }
 
-  async function safeGet(): Promise<
+  async function safeGet(options?: GetOptions<T>): Promise<
     { success: true; value: T } | { success: false; error?: unknown }
   > {
     try {
-      const v = await get();
+      const v = await get(options);
       return { success: true, value: v };
     } catch (err) {
       return { success: false, error: err };

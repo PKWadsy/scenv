@@ -82,6 +82,47 @@ describe("variable", () => {
     if (!result.success) expect(result.error).toBeDefined();
   });
 
+  it("get({ default: n }) overrides variable default for that call", async () => {
+    const v = scenv("Port", { key: "port", default: 3000 });
+    const value = await v.get({ default: 22 });
+    expect(value).toBe(22);
+    const valueNoOverride = await v.get();
+    expect(valueNoOverride).toBe(3000);
+  });
+
+  it("get({ prompt: fn }) overrides variable prompt for that call", async () => {
+    configure({ prompt: "always" });
+    const v = scenv("Prompted", {
+      key: "prompted_key",
+      default: "var-default",
+      prompt: () => "from-var-prompt",
+    });
+    const valueOverride = await v.get({ prompt: () => "from-call-prompt" });
+    expect(valueOverride).toBe("from-call-prompt");
+    const valueNoOverride = await v.get();
+    expect(valueNoOverride).toBe("from-var-prompt");
+  });
+
+  it("get({ default, prompt }) applies both overrides for that call", async () => {
+    configure({ prompt: "fallback" });
+    const v = scenv("Both", { key: "both_key" });
+    const value = await v.get({
+      default: "call-default",
+      prompt: (name, defaultVal) => {
+        expect(defaultVal).toBe("call-default");
+        return "prompted-value";
+      },
+    });
+    expect(value).toBe("prompted-value");
+  });
+
+  it("safeGet(options) passes options to get", async () => {
+    const v = scenv("Safe Override", { key: "safe_override" });
+    const result = await v.safeGet({ default: "safe-default" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.value).toBe("safe-default");
+  });
+
   it("validator receives value and can reject", async () => {
     const v = scenv("Port", {
       default: "3000",

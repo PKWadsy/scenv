@@ -16,8 +16,8 @@ Creates a scenv variable.
 
 **Returns:** An object with:
 
-- **get()** – `Promise<T>`. Resolves the value; throws if missing or validation fails.
-- **safeGet()** – `Promise<{ success: true; value: T } | { success: false; error?: unknown }>`. Never throws.
+- **get(options?)** – `Promise<T>`. Resolves the value; throws if missing or validation fails. **options** (optional): `{ prompt?, default? }` – override the prompt function or default for this call only.
+- **safeGet(options?)** – `Promise<{ success: true; value: T } | { success: false; error?: unknown }>`. Never throws. Same optional **options** as `get()`.
 - **save(value?: T)** – `Promise<void>`. Writes the value (or the last resolved value) to a context file.
 
 ---
@@ -98,4 +98,5 @@ Recursively finds all `*.context.json` files under `dir`.
 - **SavePromptMode** – `"always" | "never" | "ask"`.
 - **ScenvCallbacks** – `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`.
 - **DefaultPromptFn** – `(name, defaultValue) => value | Promise<value>`. Used as default when a variable has no `prompt`.
-- **ScenvVariable&lt;T&gt;** – `{ get(), safeGet(), save(value?) }`.
+- **ScenvVariable&lt;T&gt;** – `{ get(options?), safeGet(options?), save(value?) }`.
+- **GetOptions&lt;T&gt;** – `{ prompt?, default? }`. Optional overrides for a single `get()` or `safeGet()` call.
