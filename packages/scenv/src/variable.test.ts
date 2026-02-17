@@ -179,6 +179,12 @@ describe("variable", () => {
     expect(value).toBe("fallback-typed");
   });
 
+  it("get() throws when prompt would be used but no prompt or defaultPrompt set", async () => {
+    configure({ prompt: "fallback" });
+    const v = scenv("No Prompt", { key: "no_prompt", default: "default-val" });
+    await expect(v.get()).rejects.toThrow(/no prompt was supplied and no defaultPrompt callback is configured/);
+  });
+
   it("get() uses callbacks.defaultPrompt when variable has no prompt option", async () => {
     configure({
       prompt: "fallback",
@@ -311,8 +317,31 @@ describe("variable", () => {
     expect(data.ask_context_var).toBe("val");
   });
 
-  it("save() uses first context when saveContextTo is ask and no onAskContext", async () => {
+  it("get() uses config applied after variable is created", async () => {
+    const v = scenv("Late Config", { key: "late_config", default: "variable-default" });
+    // No config override yet; get() uses variable default
+    expect(await v.get()).toBe("variable-default");
+    // Configure after variable creation; next get() uses set override
+    configure({ set: { late_config: "from-set" } });
+    expect(await v.get()).toBe("from-set");
+    configure({ set: {} });
+    expect(await v.get()).toBe("variable-default");
+  });
+
+  it("get() throws when savePrompt is ask and prompted but onAskSaveAfterPrompt not set", async () => {
+    configure({ prompt: "always", savePrompt: "ask", contexts: [] });
+    const v = scenv("Need Save", { key: "need_save", prompt: () => "x" });
+    await expect(v.get()).rejects.toThrow(/onAskSaveAfterPrompt callback is not set/);
+  });
+
+  it("save() throws when saveContextTo is ask and onAskContext not set", async () => {
     configure({ saveContextTo: "ask", contexts: ["first-ctx"] });
+    const v = scenv("No Callback", { key: "no_callback", default: "v" });
+    await expect(v.save()).rejects.toThrow(/onAskContext callback is not set/);
+  });
+
+  it("save() uses first context when saveContextTo is set to a name (not ask)", async () => {
+    configure({ saveContextTo: "first-ctx", contexts: ["first-ctx"] });
     const v = scenv("No Callback", { key: "no_callback", default: "v" });
     await v.save();
     const ctxPath = join(tmpDir, "first-ctx.context.json");

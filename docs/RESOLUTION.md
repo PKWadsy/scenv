@@ -18,7 +18,7 @@ The first step that yields a value wins. If none do, there is no raw value; then
 
 ## Prompt modes
 
-Config key **`prompt`** controls *when* the user is prompted for a value. The prompt is only used if the variable has a `prompt` function (or scenv uses a built-in readline prompt). The modes:
+Config key **`prompt`** controls *when* the user is prompted for a value. When prompting is needed, either the variable must have a `prompt` function or **`callbacks.defaultPrompt`** must be configured; otherwise scenv throws. The modes:
 
 | Mode | When the user is prompted |
 |------|----------------------------|

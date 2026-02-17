@@ -90,7 +90,7 @@ configure({
 });
 ```
 
-Calling `configure()` multiple times **merges** with the existing programmatic config; it does not replace it. Use `resetConfig()` (mainly for tests) to clear programmatic config and callbacks.
+You can call `configure()` multiple times; each call **merges** (shallow) with the existing programmatic config and callbacks. Later keys overwrite earlier ones for the same property; nested objects (e.g. `set`, `callbacks`) are replaced, not deep-merged. Use `resetConfig()` (mainly for tests) to clear programmatic config and callbacks.
 
 ---
 

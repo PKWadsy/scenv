@@ -1,6 +1,6 @@
 {
   "name": "scenv-inquirer",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Inquirer prompt for scenv variables",
   "repository": { "type": "git", "url": "git+https://github.com/PKWadsy/senv.git" },
   "keywords": ["scenv", "inquirer", "prompt"],

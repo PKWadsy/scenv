@@ -1,6 +1,5 @@
 import { loadConfig, getCallbacks } from "./config.js";
 import { getContextValues, writeToContext } from "./context.js";
-import { defaultPrompt } from "./prompt-default.js";
 
 export type ValidatorResult<T> =
   | boolean
@@ -110,11 +109,16 @@ export function scenv<T>(
     let wasPrompted = false;
     let value: T;
     if (shouldPrompt(config, hadValue, hadEnv)) {
-      const defaultForPrompt =
-        raw !== undefined ? (raw as unknown as T) : effectiveDefault;
       const callbacks = getCallbacks();
       const fn =
-        overrides?.prompt ?? promptFn ?? callbacks.defaultPrompt ?? defaultPrompt;
+        overrides?.prompt ?? promptFn ?? callbacks.defaultPrompt;
+      if (typeof fn !== "function") {
+        throw new Error(
+          `Prompt required for variable "${name}" (key: ${key}) but no prompt was supplied and no defaultPrompt callback is configured. Set a prompt on the variable or configure({ callbacks: { defaultPrompt: ... } }).`
+        );
+      }
+      const defaultForPrompt =
+        raw !== undefined ? (raw as unknown as T) : effectiveDefault;
       value = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
       wasPrompted = true;
     } else if (raw !== undefined) {
@@ -159,13 +163,16 @@ export function scenv<T>(
         savePrompt === "always" || (savePrompt === "ask" && wasPrompted);
       if (shouldAskSave) {
         const callbacks = getCallbacks();
-        const ctxToSave =
-          callbacks.onAskSaveAfterPrompt &&
-          (await callbacks.onAskSaveAfterPrompt(
-            name,
-            final,
-            config.contexts ?? []
-          ));
+        if (typeof callbacks.onAskSaveAfterPrompt !== "function") {
+          throw new Error(
+            `savePrompt is "${savePrompt}" but onAskSaveAfterPrompt callback is not set. Configure callbacks via configure({ callbacks: { onAskSaveAfterPrompt: ... } }).`
+          );
+        }
+        const ctxToSave = await callbacks.onAskSaveAfterPrompt(
+          name,
+          final,
+          config.contexts ?? []
+        );
         if (ctxToSave) writeToContext(ctxToSave, key, String(final));
       }
     }
@@ -195,14 +202,15 @@ export function scenv<T>(
     let contextName: string | undefined = config.saveContextTo;
     if (contextName === "ask") {
       const callbacks = getCallbacks();
-      if (typeof callbacks.onAskContext === "function") {
-        contextName = await callbacks.onAskContext(
-          name,
-          config.contexts ?? []
+      if (typeof callbacks.onAskContext !== "function") {
+        throw new Error(
+          `saveContextTo is "ask" but onAskContext callback is not set. Configure callbacks via configure({ callbacks: { onAskContext: ... } }).`
         );
-      } else {
-        contextName = config.contexts?.[0] ?? "default";
       }
+      contextName = await callbacks.onAskContext(
+        name,
+        config.contexts ?? []
+      );
     }
     if (!contextName) contextName = config.contexts?.[0] ?? "default";
     writeToContext(contextName, key, String(validated.data));

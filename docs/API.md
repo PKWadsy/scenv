@@ -12,7 +12,7 @@ Creates a scenv variable.
   - **env** (string) – Environment variable name. Default: derived from key (uppercase, hyphens to underscores).
   - **default** (T) – Default value when nothing is set from set/env/context.
   - **validator** (function) – `(val: T) => boolean | { success: true; data?: T } | { success: false; error?: unknown }`. Called with the resolved (or prompted) value.
-  - **prompt** (function) – `(name: string, defaultValue: T) => T | Promise<T>`. Called when config says to prompt; receives the variable name and the current default.
+  - **prompt** (function) – `(name: string, defaultValue: T) => T | Promise<T>`. Called when config says to prompt; receives the variable name and the current default. If the variable has no `prompt` and no `callbacks.defaultPrompt` is set, scenv throws when prompting would occur.
 
 **Returns:** An object with:
 
@@ -24,7 +24,7 @@ Creates a scenv variable.
 
 ### `configure(partial)`
 
-Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file.
+Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file. You can call `configure()` multiple times; each call is **merged (shallow)** with the previous programmatic config and callbacks—later values overwrite earlier for the same key; objects like `set` and `callbacks` are replaced, not deep-merged.
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
   - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `savePrompt`, `saveContextTo`, `root`.
