@@ -10,9 +10,25 @@ For each variable, scenv looks up a **raw value** (string) only from:
 
 1. **Set overrides** – If `config.set[key]` exists (e.g. from `--set key=value`), that string is used.
 2. **Environment** – If `ignoreEnv` is false and `process.env[envKey]` is set and non-empty, that value is used. The env key is the variable’s `env` option or derived from `key` (e.g. `api_url` → `API_URL`).
-3. **Context** – If `ignoreContext` is false, the merged context map from `getContextValues()` is consulted for the variable’s `key`. The first (and only) value in that map for that key is used (context merge order is already applied when building the map).
+3. **Context** – If `ignoreContext` is false, the merged context map from `getMergedContextValues()` is consulted for the variable’s `key`. The first (and only) value in that map for that key is used (context merge order is already applied when building the map).
 
 The first step that yields a value wins. If none do, there is no raw value; then **prompt mode** (and optionally the variable’s **default**) determines the final value (see Prompt modes). The variable’s `default` is not part of “raw” resolution—it is used only when no value came from set/env/context and the user was not prompted (or after the prompt as the suggested default). If there is no raw value, no default, and no prompt (or prompt is not used), resolution is “missing” and `.get()` throws while `.safeGet()` returns `{ success: false, error }`.
+
+---
+
+## Context references: `@context:key`
+
+After a value is chosen from set, env, context, default, or prompt, scenv checks whether it matches the syntax **`@<context>:<key>`**. If it does, scenv looks up that **key** in that **context** file (e.g. `prod.context.json` for `@prod:…`) and uses that value instead. This applies everywhere: set overrides, environment variables, merged context values, variable **default**, and prompt return values.
+
+Examples:
+
+- `--set api_url=@prod:core_server_url` – use the value of `core_server_url` from `prod.context.json`.
+- `API_URL=@prod:core_server_url` – same, from the environment.
+- A context file can store `"api_url": "@prod:core_server_url"`; that reference is resolved when the variable is read.
+- A variable default can be `default: "@prod:core_server_url"`.
+- A prompt callback can return `"@prod:core_server_url"` and it will be resolved.
+
+References are resolved recursively (e.g. `@prod:a` → `@staging:b` → `"final"`) up to a safe depth. If the context is not found (no `{context}.context.json`) or the key is not in that context, resolution **throws** so you fail fast. The context file is discovered under the config **root** (same as other context files); `ignoreContext` does not prevent resolving explicit `@context:key` references.
 
 ---
 

@@ -66,6 +66,44 @@ export function discoverContextPaths(
 }
 
 /**
+ * Loads key-value pairs from a single context file. Used when resolving @context:key references.
+ * Does not depend on config.contexts or ignoreContext; the context file is read if it exists
+ * under the config root.
+ *
+ * @param contextName - Name of the context (e.g. "prod", "dev") — file is contextName.context.json.
+ * @param root - Optional root directory to search. If omitted, uses loadConfig().root.
+ * @returns A flat record of key → string value from that context file. Empty if file not found or invalid.
+ */
+export function getContext(
+  contextName: string,
+  root?: string
+): Record<string, string> {
+  const config = loadConfig();
+  const searchRoot = root ?? config.root ?? process.cwd();
+  const paths = discoverContextPaths(searchRoot);
+  const filePath = paths.get(contextName);
+  if (!filePath) {
+    log("trace", `getContext: context "${contextName}" not found`);
+    return {};
+  }
+  try {
+    const raw = readFileSync(filePath, "utf-8");
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (typeof v === "string") out[k] = v;
+    }
+    return out;
+  } catch (err) {
+    log(
+      "trace",
+      `getContext: "${contextName}" unreadable: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return {};
+  }
+}
+
+/**
  * Loads and merges context values from the current config. Respects {@link ScenvConfig.contexts}
  * order and {@link ScenvConfig.ignoreContext}. Each context file is a JSON object of string
  * key-value pairs; later contexts overwrite earlier for the same key. Used during variable
@@ -73,7 +111,7 @@ export function discoverContextPaths(
  *
  * @returns A flat record of key → string value. Empty if ignoreContext is true or no contexts loaded.
  */
-export function getContextValues(): Record<string, string> {
+export function getMergedContextValues(): Record<string, string> {
   const config = loadConfig();
   logConfigLoaded(config);
   if (config.ignoreContext) return {};

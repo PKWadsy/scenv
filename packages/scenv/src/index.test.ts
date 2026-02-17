@@ -4,7 +4,8 @@ import {
   configure,
   resetConfig,
   getCallbacks,
-  getContextValues,
+  getMergedContextValues,
+  getContext,
   discoverContextPaths,
   scenv,
   parseScenvArgs,
@@ -27,8 +28,9 @@ describe("index", () => {
     expect(typeof cb.onAskContext).toBe("function");
   });
 
-  it("re-exports getContextValues, discoverContextPaths", () => {
-    expect(typeof getContextValues).toBe("function");
+  it("re-exports getMergedContextValues, getContext, discoverContextPaths", () => {
+    expect(typeof getMergedContextValues).toBe("function");
+    expect(typeof getContext).toBe("function");
     expect(typeof discoverContextPaths).toBe("function");
   });
 

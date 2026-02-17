@@ -68,6 +68,8 @@ Values are chosen in this order (first match wins):
 3. **Context** – Merged values from context files (unless `ignoreContext`), in context order.
 4. **Default** – Variable’s `default` option.
 
+Any string value (from set, env, context, default, or prompt) that matches **`@<context>:<key>`** is resolved from that context file first (e.g. `@prod:core_server_url` uses `core_server_url` from `prod.context.json`). This works everywhere: `--set api_url=@prod:core_server_url`, env vars, context files, defaults, and prompts.
+
 Prompting (when to ask the user) is controlled by config `prompt`: `always` | `never` | `fallback` | `no-env`.
 
 ---

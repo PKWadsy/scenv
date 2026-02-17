@@ -63,9 +63,15 @@ for (const [name, path] of paths) {
 
 ---
 
-## Reading merged values: getContextValues()
+## Reading merged values: getMergedContextValues()
 
-`getContextValues()` returns a single object: all context key-value pairs merged in context order (later overwrites earlier). Only string values are included. This is what variable resolution uses when `ignoreContext` is false.
+`getMergedContextValues()` returns a single object: all context key-value pairs merged in context order (later overwrites earlier). Only string values are included. This is what variable resolution uses when `ignoreContext` is false.
+
+---
+
+## Reading a single context: getContext()
+
+`getContext(contextName, root?)` loads key-value pairs from one context file (e.g. `prod.context.json`). It does not depend on the configured context list or `ignoreContext`. Scenv uses it when resolving **context references** (see [Resolution – Context references](RESOLUTION.md#context-references-contextkey)): any value that looks like `@<context>:<key>` is replaced by the value of that key in that context. You can call `getContext` yourself to inspect or reuse a single context’s values.
 
 ---
 

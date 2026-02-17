@@ -40,6 +40,8 @@ await apiUrl.save();                    // write current value to a context file
 3. **Context** – merged JSON context files
 4. **Default** – variable’s `default` option
 
+Any string value matching **`@<context>:<key>`** (e.g. `@prod:core_server_url`) is resolved from that context file first—in set, env, context, default, and prompts.
+
 Prompting (when to ask the user) is controlled by config `prompt`: `always` | `never` | `fallback` | `no-env`.
 
 ## Optional integrations

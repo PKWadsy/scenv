@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { configure, resetConfig } from "./config.js";
 import {
   discoverContextPaths,
-  getContextValues,
+  getMergedContextValues,
+  getContext,
   getContextWritePath,
   writeToContext,
 } from "./context.js";
@@ -44,7 +45,7 @@ describe("context", () => {
     expect(paths.get("staging")).toBe(join(sub, "staging.context.json"));
   });
 
-  it("getContextValues returns merged values in context order", () => {
+  it("getMergedContextValues returns merged values in context order", () => {
     writeFileSync(
       join(tmpDir, "a.context.json"),
       JSON.stringify({ foo: "from-a", bar: "from-a" })
@@ -54,22 +55,22 @@ describe("context", () => {
       JSON.stringify({ bar: "from-b" })
     );
     configure({ root: tmpDir, contexts: ["a", "b"] });
-    const values = getContextValues();
+    const values = getMergedContextValues();
     expect(values.foo).toBe("from-a");
     expect(values.bar).toBe("from-b");
   });
 
-  it("getContextValues returns {} when ignoreContext", () => {
+  it("getMergedContextValues returns {} when ignoreContext", () => {
     writeFileSync(join(tmpDir, "prod.context.json"), '{"x":"y"}');
     configure({ root: tmpDir, contexts: ["prod"], ignoreContext: true });
-    const values = getContextValues();
+    const values = getMergedContextValues();
     expect(values).toEqual({});
   });
 
-  it("writeToContext creates file and getContextValues reads it", () => {
+  it("writeToContext creates file and getMergedContextValues reads it", () => {
     configure({ root: tmpDir, contexts: ["myctx"] });
     writeToContext("myctx", "api_url", "https://api.example.com");
-    const values = getContextValues();
+    const values = getMergedContextValues();
     expect(values.api_url).toBe("https://api.example.com");
   });
 
@@ -78,18 +79,18 @@ describe("context", () => {
     expect(path).toBe(join(tmpDir, "newcontext.context.json"));
   });
 
-  it("getContextValues skips context file with invalid JSON", () => {
+  it("getMergedContextValues skips context file with invalid JSON", () => {
     writeFileSync(join(tmpDir, "bad.context.json"), "not json");
     writeFileSync(
       join(tmpDir, "good.context.json"),
       JSON.stringify({ key: "value" })
     );
     configure({ root: tmpDir, contexts: ["bad", "good"] });
-    const values = getContextValues();
+    const values = getMergedContextValues();
     expect(values.key).toBe("value");
   });
 
-  it("getContextValues only includes string values from context file", () => {
+  it("getMergedContextValues only includes string values from context file", () => {
     writeFileSync(
       join(tmpDir, "mixed.context.json"),
       JSON.stringify({
@@ -102,7 +103,7 @@ describe("context", () => {
       })
     );
     configure({ root: tmpDir, contexts: ["mixed"] });
-    const values = getContextValues();
+    const values = getMergedContextValues();
     expect(values).toEqual({ str: "ok" });
   });
 
@@ -111,5 +112,20 @@ describe("context", () => {
     writeFileSync(filePath, "x");
     const paths = discoverContextPaths(filePath);
     expect(paths.size).toBe(0);
+  });
+
+  it("getContext returns key-value map for a single context", () => {
+    writeFileSync(
+      join(tmpDir, "prod.context.json"),
+      JSON.stringify({ api_url: "https://api.example.com", port: "443" })
+    );
+    const values = getContext("prod", tmpDir);
+    expect(values.api_url).toBe("https://api.example.com");
+    expect(values.port).toBe("443");
+  });
+
+  it("getContext returns {} when context not found", () => {
+    const values = getContext("nonexistent", tmpDir);
+    expect(values).toEqual({});
   });
 });

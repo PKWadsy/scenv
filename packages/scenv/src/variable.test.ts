@@ -362,4 +362,116 @@ describe("variable", () => {
     const data = JSON.parse(content);
     expect(data.no_callback).toBe("v");
   });
+
+  describe("@context:key resolution", () => {
+    it("resolves @prod:key from set override", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ core_server_url: "https://prod.example.com" })
+      );
+      configure({
+        set: { api_url: "@prod:core_server_url" },
+        root: tmpDir,
+      });
+      const v = scenv("API URL", { key: "api_url", default: "http://localhost" });
+      const value = await v.get();
+      expect(value).toBe("https://prod.example.com");
+    });
+
+    it("resolves @context:key from env", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ core_server_url: "https://env-prod.example.com" })
+      );
+      configure({
+        ignoreEnv: false,
+        root: tmpDir,
+      });
+      process.env.API_URL = "@prod:core_server_url";
+      const v = scenv("API URL", { key: "api_url", default: "http://localhost" });
+      const value = await v.get();
+      expect(value).toBe("https://env-prod.example.com");
+      delete process.env.API_URL;
+    });
+
+    it("resolves @context:key from merged context value", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ base_url: "https://prod.example.com" })
+      );
+      writeFileSync(
+        join(tmpDir, "dev.context.json"),
+        JSON.stringify({ api_url: "@prod:base_url" })
+      );
+      configure({
+        ignoreContext: false,
+        contexts: ["dev"],
+        root: tmpDir,
+      });
+      const v = scenv("API URL", { key: "api_url", default: "http://localhost" });
+      const value = await v.get();
+      expect(value).toBe("https://prod.example.com");
+    });
+
+    it("resolves @context:key from default option", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ core_server_url: "https://default-prod.example.com" })
+      );
+      configure({ root: tmpDir });
+      const v = scenv("API URL", {
+        key: "api_url",
+        default: "@prod:core_server_url",
+      });
+      const value = await v.get();
+      expect(value).toBe("https://default-prod.example.com");
+    });
+
+    it("resolves @context:key from prompt return value", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ core_server_url: "https://prompt-prod.example.com" })
+      );
+      configure({
+        prompt: "always",
+        shouldSavePrompt: "never",
+        root: tmpDir,
+      });
+      const v = scenv("API URL", {
+        key: "api_url",
+        default: "http://localhost",
+        prompt: () => "@prod:core_server_url",
+      });
+      const value = await v.get();
+      expect(value).toBe("https://prompt-prod.example.com");
+    });
+
+    it("throws when @context:key key not in context", async () => {
+      writeFileSync(join(tmpDir, "prod.context.json"), JSON.stringify({ other_key: "x" }));
+      configure({ set: { api_url: "@prod:missing_key" }, root: tmpDir });
+      const v = scenv("API URL", { key: "api_url" });
+      await expect(v.get()).rejects.toThrow(/key "missing_key" is not defined in context "prod"/);
+    });
+
+    it("throws when @context:key context not found", async () => {
+      configure({ set: { api_url: "@nonexistent:some_key" }, root: tmpDir });
+      const v = scenv("API URL", { key: "api_url" });
+      await expect(v.get()).rejects.toThrow(/context "nonexistent" not found/);
+    });
+
+    it("resolves recursive @context:key", async () => {
+      writeFileSync(
+        join(tmpDir, "staging.context.json"),
+        JSON.stringify({ final_url: "https://final.example.com" })
+      );
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ api_url: "@staging:final_url" })
+      );
+      configure({ set: { api_url: "@prod:api_url" }, root: tmpDir });
+      const v = scenv("API URL", { key: "api_url" });
+      const value = await v.get();
+      expect(value).toBe("https://final.example.com");
+    });
+  });
 });

@@ -1,6 +1,36 @@
 import { loadConfig, getCallbacks } from "./config.js";
-import { getContextValues, writeToContext } from "./context.js";
+import { getMergedContextValues, getContext, writeToContext } from "./context.js";
 import { log, logConfigLoaded } from "./log.js";
+
+/** Matches @<context>:<key> for context-reference resolution. */
+const CONTEXT_REF_REGEX = /^@([^:]+):(.+)$/;
+const MAX_CONTEXT_REF_DEPTH = 10;
+
+/**
+ * If the string matches @<context>:<key>, resolve it from that context file (with recursion up to MAX_CONTEXT_REF_DEPTH).
+ * Throws if the context is not found or the key is not in that context. Otherwise returns the string as-is.
+ */
+function resolveContextReference(raw: string, depth = 0): string {
+  if (depth >= MAX_CONTEXT_REF_DEPTH) {
+    throw new Error(
+      `Context reference resolution exceeded max depth (${MAX_CONTEXT_REF_DEPTH}): possible circular reference`
+    );
+  }
+  const match = raw.match(CONTEXT_REF_REGEX);
+  if (!match) return raw;
+  const [, contextName, refKey] = match;
+  const ctx = getContext(contextName);
+  const resolved = ctx[refKey];
+  if (resolved === undefined) {
+    const hasContext = Object.keys(ctx).length > 0;
+    const msg = hasContext
+      ? `Context reference @${contextName}:${refKey} could not be resolved: key "${refKey}" is not defined in context "${contextName}".`
+      : `Context reference @${contextName}:${refKey} could not be resolved: context "${contextName}" not found (no ${contextName}.context.json).`;
+    log("error", msg);
+    throw new Error(msg);
+  }
+  return resolveContextReference(resolved, depth + 1);
+}
 
 /**
  * Return type for a variable's optional `validator` function. Use a boolean for simple
@@ -151,22 +181,25 @@ export function scenv<T>(
     log("trace", `resolveRaw: checking set for key=${key}`);
     if (config.set?.[key] !== undefined) {
       log("trace", `resolveRaw: set hit key=${key}`);
-      return { raw: config.set[key], source: "set" };
+      const raw = resolveContextReference(config.set[key]);
+      return { raw, source: "set" };
     }
     if (!config.ignoreEnv) {
       log("trace", `resolveRaw: checking env ${envKey}`);
       const envVal = process.env[envKey];
       if (envVal !== undefined && envVal !== "") {
         log("trace", "resolveRaw: env hit");
-        return { raw: envVal, source: "env" };
+        const raw = resolveContextReference(envVal);
+        return { raw, source: "env" };
       }
     }
     if (!config.ignoreContext) {
       log("trace", "resolveRaw: checking context");
-      const ctx = getContextValues();
+      const ctx = getMergedContextValues();
       if (ctx[key] !== undefined) {
         log("trace", `resolveRaw: context hit key=${key}`);
-        return { raw: ctx[key], source: "context" };
+        const raw = resolveContextReference(ctx[key]);
+        return { raw, source: "context" };
       }
     }
     log("trace", "resolveRaw: no value");
@@ -208,6 +241,12 @@ export function scenv<T>(
       `prompt decision key=${key} prompt=${config.prompt ?? "fallback"} hadValue=${hadValue} hadEnv=${hadEnv} -> ${doPrompt ? "prompt" : "no prompt"}`
     );
     const effectiveDefault = overrides?.default !== undefined ? overrides.default : defaultValue;
+    const resolvedDefault =
+      effectiveDefault === undefined
+        ? undefined
+        : (typeof effectiveDefault === "string"
+            ? resolveContextReference(effectiveDefault)
+            : effectiveDefault) as T | undefined;
     let wasPrompted = false;
     let value: T;
     let resolvedFrom: ResolveSource | "default" | "prompt";
@@ -221,15 +260,19 @@ export function scenv<T>(
         );
       }
       const defaultForPrompt =
-        raw !== undefined ? (raw as unknown as T) : effectiveDefault;
-      value = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
+        raw !== undefined ? (raw as unknown as T) : resolvedDefault;
+      let promptedValue = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
+      value =
+        typeof promptedValue === "string"
+          ? (resolveContextReference(promptedValue) as T)
+          : promptedValue;
       wasPrompted = true;
       resolvedFrom = "prompt";
     } else if (raw !== undefined) {
       value = raw as unknown as T;
       resolvedFrom = source!;
-    } else if (effectiveDefault !== undefined) {
-      value = effectiveDefault;
+    } else if (resolvedDefault !== undefined) {
+      value = resolvedDefault;
       resolvedFrom = "default";
     } else {
       throw new Error(`Missing value for variable "${name}" (key: ${key})`);

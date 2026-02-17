@@ -6,7 +6,7 @@
  *   cd examples/contexts && pnpm start
  *   pnpm start -- --context overlay,base   (swap order: base wins where both set)
  */
-import { configure, parseScenvArgs, loadConfig, scenv, getContextValues } from "scenv";
+import { configure, parseScenvArgs, loadConfig, scenv, getMergedContextValues } from "scenv";
 
 configure(parseScenvArgs(process.argv.slice(2)));
 
@@ -34,7 +34,7 @@ const debug = scenv("Debug", {
 async function main() {
   const config = loadConfig();
   console.log("\nContext order:", config.contexts?.join(" → "));
-  console.log("Merged context map:", getContextValues());
+  console.log("Merged context map:", getMergedContextValues());
   console.log("");
 
   const db = await database_url.get();

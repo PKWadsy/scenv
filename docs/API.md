@@ -81,9 +81,26 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 
 ---
 
-### `getContextValues()`
+### `getMergedContextValues()`
 
 Returns the merged context key-value map (string keys and values) for the current config. Respects `ignoreContext`.
+
+---
+
+### `getContext(contextName, root?)`
+
+Loads key-value pairs from a **single** context file (e.g. `prod.context.json`). Used internally when resolving **context references** `@context:key`; you can call it to read one context’s values.
+
+- **contextName** (string) – Name of the context (file is `{contextName}.context.json`).
+- **root** (string, optional) – Directory to search for context files. If omitted, uses `loadConfig().root`.
+
+**Returns:** `Record<string, string>` from that context file. Empty if the file is not found or invalid.
+
+---
+
+### Context references: `@context:key`
+
+Any resolved string value (from set, env, context, default, or prompt) that matches the syntax **`@<context>:<key>`** is replaced by the value of **key** in that **context** file before use. If the context file is not found or the key is missing, resolution **throws** (fail fast). See [Resolution](RESOLUTION.md#context-references-contextkey).
 
 ---
 

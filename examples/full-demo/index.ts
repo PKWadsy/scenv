@@ -17,7 +17,7 @@ import {
   parseScenvArgs,
   loadConfig,
   scenv,
-  getContextValues,
+  getMergedContextValues,
   discoverContextPaths,
 } from "scenv";
 import { validator } from "scenv-zod";
@@ -81,7 +81,7 @@ async function main() {
   }
 
   console.log("\n── Merged context values (later context overwrites) ──");
-  const ctxValues = getContextValues();
+  const ctxValues = getMergedContextValues();
   console.log("  ", ctxValues);
 
   console.log("\n── Resolved variables (--set > env > context > default) ──");

@@ -12,6 +12,10 @@ export {
   type LogLevel,
 } from "./config.js";
 export { resetLogState } from "./log.js";
-export { getContextValues, discoverContextPaths } from "./context.js";
+export {
+  getMergedContextValues,
+  getContext,
+  discoverContextPaths,
+} from "./context.js";
 export { scenv, type ScenvVariable, type GetOptions } from "./variable.js";
 export { parseScenvArgs } from "./cli-args.js";
