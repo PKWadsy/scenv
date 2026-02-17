@@ -42,7 +42,14 @@ function discoverContextPathsInternal(
 }
 
 /**
- * Recursively find all *.context.json files under dir. Returns map: contextName -> absolute path (first found wins).
+ * Recursively discovers all `*.context.json` files under a directory. Context name is the
+ * filename without the suffix (e.g. `dev.context.json` → "dev"). First file found for a
+ * given name wins. Used internally for loading and saving; you can call it to inspect
+ * available contexts.
+ *
+ * @param dir - Root directory to search (e.g. config.root or process.cwd()).
+ * @param found - Optional existing map to merge results into. If omitted, a new Map is used.
+ * @returns Map from context name to absolute file path.
  */
 export function discoverContextPaths(
   dir: string,
@@ -59,7 +66,12 @@ export function discoverContextPaths(
 }
 
 /**
- * Load context files in the order of config.contexts; merge into one flat map (later context overwrites earlier for same key).
+ * Loads and merges context values from the current config. Respects {@link ScenvConfig.contexts}
+ * order and {@link ScenvConfig.ignoreContext}. Each context file is a JSON object of string
+ * key-value pairs; later contexts overwrite earlier for the same key. Used during variable
+ * resolution (set > env > context > default).
+ *
+ * @returns A flat record of key → string value. Empty if ignoreContext is true or no contexts loaded.
  */
 export function getContextValues(): Record<string, string> {
   const config = loadConfig();
@@ -96,7 +108,11 @@ export function getContextValues(): Record<string, string> {
 }
 
 /**
- * Get the path for a context name (for saving). If already discovered, returns that path; otherwise returns path for new file under root.
+ * Returns the file path used for a context name when saving. If that context was already
+ * discovered under config.root, returns its path; otherwise returns root/contextName.context.json.
+ *
+ * @param contextName - Name of the context (e.g. "dev", "prod").
+ * @returns Absolute path to the context JSON file.
  */
 export function getContextWritePath(contextName: string): string {
   const config = loadConfig();
@@ -108,7 +124,12 @@ export function getContextWritePath(contextName: string): string {
 }
 
 /**
- * Write key=value into a context file (merge with existing, create file if needed).
+ * Writes a key-value pair into a context file. Merges with existing JSON; creates the file
+ * and parent directory if needed. Used by variable.save() and when persisting prompted values.
+ *
+ * @param contextName - Name of the context (file will be contextName.context.json under config.root).
+ * @param key - Variable key to write.
+ * @param value - String value to store.
  */
 export function writeToContext(
   contextName: string,

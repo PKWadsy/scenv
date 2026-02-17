@@ -24,7 +24,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 | `ignoreEnv` | `boolean` | If `true`, environment variables are not used during resolution. |
 | `ignoreContext` | `boolean` | If `true`, context files are not used during resolution. |
 | `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. |
-| `shouldSavePrompt` | `"always"` \| `"never"` \| `"ask"` | When to ask “save for next time?” after the user is prompted for a value; see [Saving](SAVING.md). |
+| `shouldSavePrompt` | `"always"` \| `"never"` \| `"ask"` | After a prompt: `never` = don't save, `always` = save without asking, `ask` = call onAskWhetherToSave (save if true). See [Saving](SAVING.md). |
 | `saveContextTo` | `"ask"` \| `string` | Where to save when writing a variable: a context name, or `"ask"` to use the callback. |
 | `root` | `string` | Directory used as root for config and context search (optional). |
 | `logLevel` | `"none"` \| `"trace"` \| `"debug"` \| `"info"` \| `"warn"` \| `"error"` | Logging level; default is `none` (no logs). Logs go to stderr. |

@@ -2,9 +2,22 @@ import type { ScenvConfig } from "./config.js";
 import { LOG_LEVELS, type LogLevel } from "./config.js";
 
 /**
- * Parse argv (e.g. process.argv.slice(2)) into ScenvConfig for configure().
- * Supports: --context a,b,c --add-context x,y --prompt fallback --ignore-env --ignore-context
- * --set key=value --save-prompt ask --save-context-to prod --log-level trace
+ * Parses command-line arguments into a partial {@link ScenvConfig} suitable for {@link configure}.
+ * Typical use: `configure(parseScenvArgs(process.argv.slice(2)))`. Unrecognized flags are ignored.
+ *
+ * Supported flags:
+ * - `--context a,b,c` – Set contexts (replace).
+ * - `--add-context x,y` – Add contexts.
+ * - `--prompt always|never|fallback|no-env` – Prompt mode.
+ * - `--ignore-env` – Set ignoreEnv to true.
+ * - `--ignore-context` – Set ignoreContext to true.
+ * - `--set key=value` or `--set=key=value` – Add to set overrides (multiple allowed).
+ * - `--save-prompt always|never|ask` – shouldSavePrompt.
+ * - `--save-context-to name` – saveContextTo.
+ * - `--log-level level`, `--log level`, `--log=level` – logLevel.
+ *
+ * @param argv - Array of CLI arguments (e.g. process.argv.slice(2)).
+ * @returns Partial ScenvConfig with only the keys that were present in argv.
  */
 export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
   const config: Partial<ScenvConfig> = {};

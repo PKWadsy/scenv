@@ -63,7 +63,7 @@ configure({ ...yourConfig, ...callbacks() });
 This sets:
 
 - **defaultPrompt** – inquirer for variable values when no value is resolved
-- **onAskWhetherToSave** – "Save '{name}' for next time?" (y/n). Only used when `shouldSavePrompt` is "ask" or "always".
+- **onAskWhetherToSave** – "Save '{name}' for next time?" (y/n). Only used when `shouldSavePrompt` is "ask".
 - **onAskContext** – "Save to which context?" (list or new). Used when `saveContextTo` is "ask" or when saving after prompt and destination is "ask".
 
 ## API

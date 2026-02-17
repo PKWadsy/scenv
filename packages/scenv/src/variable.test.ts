@@ -295,6 +295,30 @@ describe("variable", () => {
     expect(() => readFileSync(ctxPath, "utf-8")).toThrow();
   });
 
+  it("get() saves without asking when shouldSavePrompt is always", async () => {
+    let askWhetherToSaveCalled = false;
+    configure({
+      prompt: "always",
+      shouldSavePrompt: "always",
+      saveContextTo: "always-ctx",
+      contexts: ["always-ctx"],
+      callbacks: {
+        onAskWhetherToSave: async () => {
+          askWhetherToSaveCalled = true;
+          return false;
+        },
+      },
+    });
+    const v = scenv("Always Save", { key: "always_save", prompt: () => "auto-saved" });
+    const value = await v.get();
+    expect(value).toBe("auto-saved");
+    expect(askWhetherToSaveCalled).toBe(false);
+    const ctxPath = join(tmpDir, "always-ctx.context.json");
+    const content = readFileSync(ctxPath, "utf-8");
+    const data = JSON.parse(content);
+    expect(data.always_save).toBe("auto-saved");
+  });
+
   it("save() uses onAskContext when saveContextTo is ask", async () => {
     configure({
       saveContextTo: "ask",

@@ -36,7 +36,7 @@ configure({
       return "my-context";
     },
     onAskWhetherToSave: async (variableName, value) => {
-      // Only called when shouldSavePrompt is "ask" or "always" and the user was just prompted.
+      // Only called when shouldSavePrompt is "ask" and the user was just prompted.
       // Return true to save, false to skip. Where to save is resolved separately (saveContextTo or onAskContext).
       return true;
     },
@@ -45,18 +45,18 @@ configure({
 ```
 
 - **`onAskContext`** – **Required** when `saveContextTo` is `"ask"`. Used when you call `variable.save()` or when saving after a prompt and the destination is "ask"; your app can prompt for a context name or create a new one. Throws if `saveContextTo` is `"ask"` and this callback is not set.
-- **`onAskWhetherToSave`** – Only called when **`shouldSavePrompt`** is `"ask"` or `"always"` and the user was just prompted for a value during `get()`. Return `true` to save (then scenv uses `saveContextTo` or calls `onAskContext` if destination is "ask"), or `false` to skip saving.
+- **`onAskWhetherToSave`** – Only called when **`shouldSavePrompt`** is `"ask"` and the user was just prompted. Return `true` to save (then scenv uses `saveContextTo` or calls `onAskContext` if destination is "ask"), or `false` to skip. With `"always"` we save without calling this.
 
 ---
 
 ## shouldSavePrompt
 
-**`shouldSavePrompt`** only affects the "save after prompt" flow (after the user entered a value during resolution). When unset, the default is **`ask`** unless **`prompt`** is **`never`**, in which case the default is **`never`** (so non-interactive runs never ask to save).
+**`shouldSavePrompt`** controls what happens with the value after the user was just prompted for it. When unset, the default is **`ask`** unless **`prompt`** is **`never`**, in which case the default is **`never`**.
 
 | Value | Behavior |
 |-------|----------|
-| `never` | Never ask to save after a prompt. |
-| `ask` | After the user was *just* prompted for a value, call `onAskWhetherToSave` to ask whether to save. If true, the destination is `saveContextTo` or (if "ask") `onAskContext`. |
-| `always` | Same as `ask` for the "after prompt" flow. |
+| `never` | Do not save the value. |
+| `always` | Save the value (no prompt). Destination is `saveContextTo` or `onAskContext` when saveContextTo is "ask". |
+| `ask` | Call `onAskWhetherToSave`; if it returns true, save (using saveContextTo or onAskContext); if false, don't save. |
 
-So: **`variable.save()`** never shows a "save?" prompt; it only may ask for the context via `onAskContext` when `saveContextTo` is `"ask"`. The "save for next time?" behavior is only when the user was prompted for a value and `shouldSavePrompt` is `ask` or `always`: then `onAskWhetherToSave` decides whether to save, and the destination is either the configured context or `onAskContext` when `saveContextTo` is `"ask"`.
+**`variable.save()`** does not use this; it always saves. The "save after prompt" flow only runs when the user was prompted during `get()` and `shouldSavePrompt` is `always` or `ask`.

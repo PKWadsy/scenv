@@ -16,17 +16,29 @@ function getLevelNum(): number {
   return LEVEL_NUM[level];
 }
 
+/**
+ * Returns the numeric log level for the current config (for comparison). Higher = more verbose.
+ * @returns -1 for "none", 0 trace, 1 debug, 2 info, 3 warn, 4 error.
+ */
 export function getLogLevel(): number {
   return getLevelNum();
 }
 
 let configLoadedLogged = false;
 
-/** Reset internal log state (e.g. config-loaded guard). Useful in tests after resetConfig(). */
+/**
+ * Resets internal log state (e.g. the "config loaded" one-time guard). Call after
+ * {@link resetConfig} in tests if you need to see config-loaded messages again or
+ * assert on log output.
+ */
 export function resetLogState(): void {
   configLoadedLogged = false;
 }
 
+/**
+ * Internal: logs config loaded once per process when log level is info or higher.
+ * @internal
+ */
 export function logConfigLoaded(config: Pick<ScenvConfig, "root" | "contexts">): void {
   if (configLoadedLogged) return;
   if (getLevelNum() < LEVEL_NUM.info) return;
@@ -39,6 +51,10 @@ export function logConfigLoaded(config: Pick<ScenvConfig, "root" | "contexts">):
   );
 }
 
+/**
+ * Internal logger. Writes to stderr when config.logLevel is at or above the given level.
+ * @internal
+ */
 export function log(
   level: Exclude<LogLevel, "none">,
   msg: string,

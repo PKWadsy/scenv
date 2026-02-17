@@ -7,6 +7,7 @@
     "start:with-args": "tsx index.ts --prompt never --set api_url=https://cli.example.com"
   },
   "dependencies": {
+    "@types/node": "^20.19.33",
     "scenv": "workspace:*"
   },
   "devDependencies": {

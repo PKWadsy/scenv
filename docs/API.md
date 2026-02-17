@@ -103,7 +103,7 @@ Recursively finds all `*.context.json` files under `dir`.
 - **ScenvConfig** – Full config shape (see [Configuration](CONFIGURATION.md)).
 - **LogLevel** – `"none" | "trace" | "debug" | "info" | "warn" | "error"`. Default is `none` (no logging).
 - **PromptMode** – `"always" | "never" | "fallback" | "no-env"`.
-- **SavePromptMode** – `"always" | "never" | "ask"`.
+- **SavePromptMode** – `"always" | "never" | "ask"`. After a prompt: never = don't save, always = save without asking, ask = call onAskWhetherToSave.
 - **ScenvCallbacks** – `{ defaultPrompt?, onAskWhetherToSave?, onAskContext? }`.
 - **DefaultPromptFn** – `(name, defaultValue) => value | Promise<value>`. Used as default when a variable has no `prompt`.
 - **ScenvVariable&lt;T&gt;** – `{ get(options?), safeGet(options?), save(value?) }`.

@@ -13,9 +13,10 @@ import { configure, parseScenvArgs, scenv } from "scenv";
 // Pass through CLI args (e.g. process.argv.slice(2) from your app)
 configure(parseScenvArgs(process.argv.slice(2)));
 
-const api_url = scenv("API URL", {
+const api_url = scenv<string>("API URL", {
   key: "api_url",
   env: "API_URL",
+  validator: (v): v is string => typeof v === "string",
 });
 
 async function main() {

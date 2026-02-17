@@ -15,7 +15,13 @@ function ask(message: string): Promise<string> {
 }
 
 /**
- * Minimal readline-based prompt. Used when config requests prompting but no custom prompt is provided.
+ * Minimal readline-based prompt. Used as the default when config requests prompting and no
+ * custom prompt or callbacks.defaultPrompt is provided. Asks "Enter &lt;name&gt; [&lt;default&gt;]: "
+ * on stdin; empty input returns the default. Exported for use by config default callbacks.
+ *
+ * @param name - Variable display name (shown in the prompt).
+ * @param defaultValue - Default value (shown in brackets; used when user enters nothing).
+ * @returns The entered value or the default.
  */
 export function defaultPrompt<T>(
   name: string,
@@ -43,8 +49,13 @@ export function defaultPrompt<T>(
 }
 
 /**
- * Default "whether to save" callback: asks yes/no. Only used when shouldSavePrompt is "ask" or "always".
- * Where to save is handled separately by onAskContext when ambiguous.
+ * Default "whether to save" callback. Asks "Save '&lt;name&gt;' for next time? (y/n): " via readline.
+ * Only used when {@link ScenvConfig.shouldSavePrompt} is "ask". Where to save
+ * is determined separately by saveContextTo or onAskContext.
+ *
+ * @param name - Variable display name.
+ * @param _value - The value that was just prompted (unused in default implementation).
+ * @returns true to save, false to skip.
  */
 export async function defaultAskWhetherToSave(
   name: string,
@@ -56,8 +67,12 @@ export async function defaultAskWhetherToSave(
 }
 
 /**
- * Default "which context to save to" callback: asks for a context name.
- * Used when saveContextTo is "ask" and no onAskContext is configured.
+ * Default "which context to save to" callback. Asks "Save '&lt;name&gt;' to which context? (context1, context2): "
+ * via readline. Used when {@link ScenvConfig.saveContextTo} is "ask" (or after prompt when destination is "ask").
+ *
+ * @param name - Variable display name.
+ * @param contextNames - Known context names (from config) shown as a hint.
+ * @returns The context name to write to. If empty input, returns first context or "default".
  */
 export async function defaultAskContext(
   name: string,

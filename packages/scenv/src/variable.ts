@@ -2,11 +2,22 @@ import { loadConfig, getCallbacks } from "./config.js";
 import { getContextValues, writeToContext } from "./context.js";
 import { log, logConfigLoaded } from "./log.js";
 
+/**
+ * Return type for a variable's optional `validator` function. Use a boolean for simple
+ * pass/fail, or an object to pass a transformed value or a custom error.
+ * - `true` or `{ success: true, data?: T }` – validation passed; optional `data` replaces the value.
+ * - `false` or `{ success: false, error?: unknown }` – validation failed; `.get()` throws with the error.
+ */
 export type ValidatorResult<T> =
   | boolean
   | { success: true; data?: T }
   | { success: false; error?: unknown };
 
+/**
+ * Prompt function signature. Called when config requests prompting for this variable.
+ * Receives the variable's display name and the current default (from set/env/context or option default).
+ * Return the value to use (sync or async). Used as the variable's `prompt` option or in get({ prompt: fn }).
+ */
 export type PromptFn<T> = (name: string, defaultValue: T) => T | Promise<T>;
 
 function defaultKeyFromName(name: string): string {
@@ -30,30 +41,96 @@ function normalizeValidatorResult(
   return result;
 }
 
+/**
+ * Options when creating a variable with {@link scenv}. All properties are optional.
+ * If you omit `key` and `env`, they are derived from `name`: e.g. "API URL" → key `api_url`, env `API_URL`.
+ */
 export interface ScenvVariableOptions<T> {
+  /** Internal key for --set, context files, and env. Default: name lowercased, spaces → underscores, non-alphanumeric stripped (e.g. "API URL" → "api_url"). */
   key?: string;
+  /** Environment variable name (e.g. API_URL). Default: key uppercased, hyphens → underscores. */
   env?: string;
+  /** Fallback when nothing is provided via --set, env, or context (and we're not prompting). */
   default?: T;
+  /** Optional. Run after value is resolved or prompted. Return true / { success: true } to accept, false / { success: false, error } to reject (get() throws). Use to coerce types or enforce rules. */
   validator?: (val: T) => ValidatorResult<T>;
+  /** Optional. Called when config says to prompt (e.g. prompt: "fallback" and no value found). Overrides callbacks.defaultPrompt for this variable. */
   prompt?: PromptFn<T>;
 }
 
-/** Overrides for a single .get() or .safeGet() call. */
+/**
+ * Overrides for a single get() or safeGet() call. Only that call is affected.
+ */
 export interface GetOptions<T> {
-  /** Use this prompt for this call instead of the variable's prompt or callbacks.defaultPrompt. */
+  /** Use this prompt for this call only (e.g. a one-off inquirer prompt). */
   prompt?: PromptFn<T>;
-  /** Use this as the default for this call if no value from set/env/context. */
+  /** Use this as the default for this call when no value from set/env/context. */
   default?: T;
 }
 
+/**
+ * A scenv variable: a named setting (e.g. "API URL") whose value is resolved from CLI overrides (--set),
+ * then environment variables, then context files, then default (or an optional prompt). You call get() or
+ * safeGet() to read the value; optionally save() to persist it to a context file for next time.
+ */
 export interface ScenvVariable<T> {
+  /**
+   * Resolve and return the value. Uses resolution order (set > env > context > default) and any prompt/validator.
+   * @throws If no value is found and no default/prompt, or if validation fails.
+   */
   get(options?: GetOptions<T>): Promise<T>;
+  /**
+   * Like get(), but never throws. Returns { success: true, value } or { success: false, error }.
+   */
   safeGet(options?: GetOptions<T>): Promise<
     { success: true; value: T } | { success: false; error?: unknown }
   >;
+  /**
+   * Write the value to a context file (e.g. for next run). Target context comes from config.saveContextTo or onAskContext.
+   * If you don't pass a value, the last resolved value is used. Does not prompt "save?"; it saves.
+   */
   save(value?: T): Promise<void>;
 }
 
+/**
+ * Creates a scenv variable: a named config value (e.g. API URL, port) that you read with get() or safeGet()
+ * and optionally write with save(). You pass a display name and optional options; key and env are derived from
+ * the name if you omit them.
+ *
+ * ## Resolution (how get() gets a value)
+ *
+ * get() first looks for a raw value in this order, stopping at the first found:
+ * - Set overrides from config (e.g. from --set key=value or configure({ set: { key: "value" } }))
+ * - Environment variable (e.g. API_URL for key "api_url")
+ * - Context files (merged key-value from the contexts in config, e.g. dev.context.json)
+ *
+ * If config says to prompt (see prompt mode in config: "always", "fallback", "no-env"), the prompt callback
+ * may run. When it runs, it receives the variable name and a suggested value (the raw value if any, otherwise
+ * the default option). The callback's return value is used as the value. When we don't prompt, we use the
+ * raw value if present, otherwise the default option, otherwise get() throws (no value).
+ *
+ * ## Validator
+ *
+ * If you pass a validator option, it is called with the resolved or prompted value. It can return true or
+ * { success: true } to accept, or false or { success: false, error } to reject; on reject, get() throws.
+ * Use it to coerce types (e.g. string to number) or enforce rules.
+ *
+ * ## save()
+ *
+ * The variable has a save(value?) method. It writes the value (or the last resolved value if you omit it)
+ * to a context file. The target context comes from config.saveContextTo or from the onAskContext callback
+ * when saveContextTo is "ask". save() does not ask "save?"; it saves. Optional "save after prompt" behavior
+ * is controlled by config.shouldSavePrompt and callbacks.onAskWhetherToSave.
+ *
+ * @typeParam T - Value type (default string). Use a validator to coerce to number, boolean, etc.
+ * @param name - Display name used in prompts and errors. If you omit key/env, key is derived from name (e.g. "API URL" → "api_url") and env from key (e.g. "API_URL").
+ * @param options - Optional. key, env, default, validator, prompt. See {@link ScenvVariableOptions}.
+ * @returns A {@link ScenvVariable} with get(), safeGet(), and save().
+ *
+ * @example
+ * const apiUrl = scenv("API URL", { default: "http://localhost:4000" });
+ * const url = await apiUrl.get();
+ */
 export function scenv<T>(
   name: string,
   options: ScenvVariableOptions<T> = {}
@@ -188,34 +265,37 @@ export function scenv<T>(
     const final = validated.data;
     if (wasPrompted) {
       const config = loadConfig();
-      const shouldSavePrompt =
+      const mode =
         config.shouldSavePrompt ?? (config.prompt === "never" ? "never" : "ask");
-      const shouldAskSave =
-        shouldSavePrompt === "always" || (shouldSavePrompt === "ask" && wasPrompted);
-      if (shouldAskSave) {
+      if (mode === "never") return final;
+      let doSave: boolean;
+      if (mode === "ask") {
         const callbacks = getCallbacks();
         if (typeof callbacks.onAskWhetherToSave !== "function") {
           throw new Error(
-            `shouldSavePrompt is "${shouldSavePrompt}" but onAskWhetherToSave callback is not set. Configure callbacks via configure({ callbacks: { onAskWhetherToSave: ... } }).`
+            `shouldSavePrompt is "ask" but onAskWhetherToSave callback is not set. Configure callbacks via configure({ callbacks: { onAskWhetherToSave: ... } }).`
           );
         }
-        const doSave = await callbacks.onAskWhetherToSave(name, final);
-        if (!doSave) return final;
-        const contextNames = config.contexts ?? [];
-        let ctxToSave: string;
-        if (config.saveContextTo === "ask") {
-          if (typeof callbacks.onAskContext !== "function") {
-            throw new Error(
-              `saveContextTo is "ask" but onAskContext callback is not set. Configure callbacks via configure({ callbacks: { onAskContext: ... } }).`
-            );
-          }
-          ctxToSave = await callbacks.onAskContext(name, contextNames);
-        } else {
-          ctxToSave = config.saveContextTo ?? contextNames[0] ?? "default";
-        }
-        writeToContext(ctxToSave, key, String(final));
-        log("info", `Saved key=${key} to context ${ctxToSave}`);
+        doSave = await callbacks.onAskWhetherToSave(name, final);
+      } else {
+        doSave = true; // always: save without asking
       }
+      if (!doSave) return final;
+      const callbacks = getCallbacks();
+      const contextNames = config.contexts ?? [];
+      let ctxToSave: string;
+      if (config.saveContextTo === "ask") {
+        if (typeof callbacks.onAskContext !== "function") {
+          throw new Error(
+            `saveContextTo is "ask" but onAskContext callback is not set. Configure callbacks via configure({ callbacks: { onAskContext: ... } }).`
+          );
+        }
+        ctxToSave = await callbacks.onAskContext(name, contextNames);
+      } else {
+        ctxToSave = config.saveContextTo ?? contextNames[0] ?? "default";
+      }
+      writeToContext(ctxToSave, key, String(final));
+      log("info", `Saved key=${key} to context ${ctxToSave}`);
     }
     return final;
   }

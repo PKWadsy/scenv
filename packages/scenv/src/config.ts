@@ -6,32 +6,57 @@ import {
   defaultAskContext,
 } from "./prompt-default.js";
 
+/**
+ * When to prompt the user for a variable value during resolution.
+ * - `"always"` – Always call the variable's prompt (or defaultPrompt) when resolving.
+ * - `"never"` – Never prompt; use set/env/context/default only.
+ * - `"fallback"` – Prompt only when no value was found from set, env, or context.
+ * - `"no-env"` – Prompt when the env var is not set (even if context has a value).
+ */
 export type PromptMode = "always" | "never" | "fallback" | "no-env";
+
+/**
+ * What to do with the value after the user was just prompted for it.
+ * - `"never"` – Do not save; discard for next time.
+ * - `"always"` – Save it (no prompt). Use saveContextTo or onAskContext only to pick where.
+ * - `"ask"` – Call {@link ScenvCallbacks.onAskWhetherToSave}; if true save, if false don't save.
+ */
 export type SavePromptMode = "always" | "never" | "ask";
 
+/**
+ * Valid log levels. Use with {@link ScenvConfig.logLevel}.
+ * Messages at or above the configured level are written to stderr.
+ */
 export const LOG_LEVELS = ["none", "trace", "debug", "info", "warn", "error"] as const;
+
+/** Log level type. `"none"` disables logging; higher values are more verbose. */
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
+/**
+ * Full scenv configuration. Built from file (scenv.config.json), environment (SCENV_*),
+ * and programmatic config (configure()), with programmatic > env > file precedence.
+ * All properties are optional; defaults apply when omitted.
+ */
 export interface ScenvConfig {
-  /** Replace all contexts with this list (CLI: --context a,b,c) */
+  /** Replace the context list entirely (CLI: `--context a,b,c`). Loaded in order; later overwrites earlier for same key. */
   contexts?: string[];
-  /** Merge these contexts with existing (CLI: --add-context a,b,c) */
+  /** Merge these context names with existing (CLI: `--add-context a,b,c`). Ignored if `contexts` is set in the same layer. */
   addContexts?: string[];
-  /** When to prompt for variable value */
+  /** When to prompt for a variable value. See {@link PromptMode}. Default is `"fallback"`. */
   prompt?: PromptMode;
-  /** Ignore environment variables during resolution */
+  /** If true, environment variables are not used during resolution. */
   ignoreEnv?: boolean;
-  /** Ignore loaded context during resolution */
+  /** If true, context files are not loaded during resolution. */
   ignoreContext?: boolean;
-  /** Override values: key -> string (CLI: --set key=val) */
+  /** Override values by key (CLI: `--set key=value`). Takes precedence over env and context. */
   set?: Record<string, string>;
-  /** When to ask "save for next time?" after a prompt. Only in "ask" (or "always") mode is the onAskWhetherToSave callback used. */
+  /** After a prompt: "never" = don't save, "always" = save without asking, "ask" = call onAskWhetherToSave (then save if true). */
   shouldSavePrompt?: SavePromptMode;
-  /** Where to save: context name or "ask" (then onAskContext is used to pick). */
+  /** Target context for saving: a context name, or `"ask"` to use {@link ScenvCallbacks.onAskContext}. */
   saveContextTo?: "ask" | string;
-  /** Root directory for config/context search (default: cwd) */
+  /** Root directory for config file search and context discovery. Default is cwd or the directory containing scenv.config.json. */
   root?: string;
-  /** Log level: none (default), trace, debug, info, warn, error */
+  /** Logging level. Default is `"none"`. Messages go to stderr. */
   logLevel?: LogLevel;
 }
 
@@ -50,21 +75,30 @@ const envKeyMap: Record<string, keyof ScenvConfig> = {
 
 let programmaticConfig: Partial<ScenvConfig> = {};
 
-/** (name, defaultValue) => value; used when a variable has no prompt option. Overridable per variable. */
+/**
+ * Default prompt function signature. Called when a variable has no `prompt` option and
+ * config requests prompting. Receives the variable's display name and default value;
+ * returns the value to use (sync or async). Overridable per variable via the variable's
+ * `prompt` option or per call via get({ prompt: fn }).
+ */
 export type DefaultPromptFn = (
   name: string,
   defaultValue: unknown
 ) => unknown | Promise<unknown>;
 
+/**
+ * Callbacks for interactive behaviour. All have built-in readline defaults when not set.
+ * Pass to {@link configure} via `configure({ callbacks: { ... } })`.
+ */
 export interface ScenvCallbacks {
-  /** Default prompt when a variable does not provide its own `prompt`. Variable's `prompt` overrides this. */
+  /** Used when a variable does not define its own `prompt`. Variable-level `prompt` overrides this. */
   defaultPrompt?: DefaultPromptFn;
-  /** Only called when shouldSavePrompt is "ask" or "always" and user was just prompted. (variableName, value) => true to save, false to skip. */
+  /** Called only when {@link ScenvConfig.shouldSavePrompt} is "ask" and the user was just prompted. Return true to save, false to skip. (With "always", we save without calling this.) */
   onAskWhetherToSave?: (
     name: string,
     value: unknown
   ) => Promise<boolean>;
-  /** When save destination is ambiguous (saveContextTo is "ask" or after prompt when no single target): (variableName, contextNames) => context name to save to. */
+  /** Called when the save destination is ambiguous: saveContextTo is "ask", or after a prompt when the user said yes and saveContextTo is "ask". Return the context name to write to. */
   onAskContext?: (
     name: string,
     contextNames: string[]
@@ -72,6 +106,12 @@ export interface ScenvCallbacks {
 }
 let programmaticCallbacks: ScenvCallbacks = {};
 
+/**
+ * Returns the current callbacks (with built-in defaults merged in for any unset callback).
+ * Useful for inspection or to pass a subset to another layer. Each call returns a new object.
+ *
+ * @returns Copy of the effective callbacks: defaultPrompt, onAskWhetherToSave, onAskContext (always defined).
+ */
 export function getCallbacks(): ScenvCallbacks {
   return {
     defaultPrompt: programmaticCallbacks.defaultPrompt ?? defaultPromptFn,
@@ -220,7 +260,12 @@ function mergeContexts(
 }
 
 /**
- * Load full config: file (from root or cwd) <- env <- programmatic. Precedence: programmatic > env > file.
+ * Loads the full merged configuration. Searches for scenv.config.json upward from the given
+ * root (or cwd / programmatic root), then overlays SCENV_* env vars, then programmatic config.
+ * Use this to read the effective config (e.g. for logging or conditional logic).
+ *
+ * @param root - Optional directory to start searching for scenv.config.json. If omitted, uses programmatic config.root or process.cwd().
+ * @returns The merged {@link ScenvConfig} with at least `root` and `contexts` defined.
  */
 export function loadConfig(root?: string): ScenvConfig {
   const startDir =
@@ -245,7 +290,12 @@ export function loadConfig(root?: string): ScenvConfig {
 }
 
 /**
- * Set programmatic config (e.g. from CLI flags). Merged on top of env and file in loadConfig().
+ * Merges config and/or callbacks into the programmatic layer. Programmatic config has
+ * highest precedence in {@link loadConfig}. Call multiple times to merge; later values
+ * overwrite earlier for the same key. Typical use: pass the result of {@link parseScenvArgs}
+ * or your own partial config.
+ *
+ * @param partial - Partial config and/or `callbacks`. Omitted keys are left unchanged. Nested objects (e.g. callbacks, set) are merged shallowly with existing.
  */
 export function configure(
   partial: Partial<ScenvConfig> & { callbacks?: ScenvCallbacks }
@@ -258,7 +308,8 @@ export function configure(
 }
 
 /**
- * Reset programmatic config (mainly for tests).
+ * Clears all programmatic config and callbacks. File and env config are unaffected.
+ * Mainly for tests. After calling, the next loadConfig() will not include any programmatic overrides.
  */
 export function resetConfig(): void {
   programmaticConfig = {};
