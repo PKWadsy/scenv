@@ -52,7 +52,7 @@ configure({
 
 ## savePrompt
 
-**`savePrompt`** only affects the “save after prompt” flow (after the user entered a value during resolution). When unset, the default is **`ask`**.
+**`savePrompt`** only affects the “save after prompt” flow (after the user entered a value during resolution). When unset, the default is **`ask`** unless **`prompt`** is **`never`**, in which case the default is **`never`** (so non-interactive runs never ask to save).
 
 | Value | Behavior |
 |-------|----------|
