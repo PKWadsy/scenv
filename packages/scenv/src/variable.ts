@@ -188,7 +188,7 @@ export function scenv<T>(
     const final = validated.data;
     if (wasPrompted) {
       const config = loadConfig();
-      const savePrompt = config.savePrompt ?? "never";
+      const savePrompt = config.savePrompt ?? "ask";
       const shouldAskSave =
         savePrompt === "always" || (savePrompt === "ask" && wasPrompted);
       if (shouldAskSave) {

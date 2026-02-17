@@ -91,7 +91,7 @@ describe("variable", () => {
   });
 
   it("get({ prompt: fn }) overrides variable prompt for that call", async () => {
-    configure({ prompt: "always" });
+    configure({ prompt: "always", savePrompt: "never" });
     const v = scenv("Prompted", {
       key: "prompted_key",
       default: "var-default",
@@ -104,7 +104,7 @@ describe("variable", () => {
   });
 
   it("get({ default, prompt }) applies both overrides for that call", async () => {
-    configure({ prompt: "fallback" });
+    configure({ prompt: "fallback", savePrompt: "never" });
     const v = scenv("Both", { key: "both_key" });
     const value = await v.get({
       default: "call-default",
@@ -155,7 +155,7 @@ describe("variable", () => {
   });
 
   it("get() uses custom prompt when prompt mode is always", async () => {
-    configure({ prompt: "always" });
+    configure({ prompt: "always", savePrompt: "never" });
     const v = scenv("Prompted Var", {
       key: "prompted_var",
       default: "default-val",
@@ -170,7 +170,7 @@ describe("variable", () => {
   });
 
   it("get() uses custom prompt when prompt mode fallback and no value", async () => {
-    configure({ prompt: "fallback" });
+    configure({ prompt: "fallback", savePrompt: "never" });
     const v = scenv("Fallback Var", {
       key: "fallback_var",
       prompt: () => "fallback-typed",
@@ -188,6 +188,7 @@ describe("variable", () => {
   it("get() uses callbacks.defaultPrompt when variable has no prompt option", async () => {
     configure({
       prompt: "fallback",
+      savePrompt: "never",
       callbacks: {
         defaultPrompt: async (name, defaultVal) => {
           expect(name).toBe("No Var Prompt");
@@ -208,6 +209,7 @@ describe("variable", () => {
     const defaultPromptCalled: string[] = [];
     configure({
       prompt: "fallback",
+      savePrompt: "never",
       callbacks: {
         defaultPrompt: async (name) => {
           defaultPromptCalled.push(name);
@@ -225,7 +227,7 @@ describe("variable", () => {
   });
 
   it("get() prompts when prompt mode fallback and only default exists (no set/env/context)", async () => {
-    configure({ prompt: "fallback" });
+    configure({ prompt: "fallback", savePrompt: "never" });
     const v = scenv("Core Server URL", {
       key: "core_server_url",
       env: "CORE_SERVER_URL",
