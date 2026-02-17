@@ -34,7 +34,7 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
     } else if (arg === "--save-prompt" && argv[i + 1] !== undefined) {
       const v = argv[++i].toLowerCase();
       if (["always", "never", "ask"].includes(v)) {
-        config.savePrompt = v as ScenvConfig["savePrompt"];
+        config.shouldSavePrompt = v as ScenvConfig["shouldSavePrompt"];
       }
     } else if (arg === "--save-context-to" && argv[i + 1] !== undefined) {
       config.saveContextTo = argv[++i];

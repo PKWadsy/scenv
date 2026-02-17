@@ -117,7 +117,7 @@ describe("config", () => {
     process.env.SCENV_SAVE_PROMPT = "ask";
     process.env.SCENV_PROMPT = "no-env";
     const config = loadConfig(tmpDir);
-    expect(config.savePrompt).toBe("ask");
+    expect(config.shouldSavePrompt).toBe("ask");
     expect(config.prompt).toBe("no-env");
     delete process.env.SCENV_SAVE_PROMPT;
     delete process.env.SCENV_PROMPT;
@@ -127,7 +127,7 @@ describe("config", () => {
     resetConfig();
     const cb = getCallbacks();
     expect(typeof cb.defaultPrompt).toBe("function");
-    expect(typeof cb.onAskSaveAfterPrompt).toBe("function");
+    expect(typeof cb.onAskWhetherToSave).toBe("function");
     expect(typeof cb.onAskContext).toBe("function");
   });
 

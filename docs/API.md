@@ -27,8 +27,8 @@ Creates a scenv variable.
 Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file. You can call `configure()` multiple times; each call is **merged (shallow)** with the previous programmatic config and callbacks—later values overwrite earlier for the same key; objects like `set` and `callbacks` are replaced, not deep-merged.
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
-  - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `savePrompt`, `saveContextTo`, `root`, `logLevel`.
-  - **callbacks**: `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). See [Saving](SAVING.md) for the others.
+  - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `shouldSavePrompt`, `saveContextTo`, `root`, `logLevel`.
+  - **callbacks**: `{ defaultPrompt?, onAskWhetherToSave?, onAskContext? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). See [Saving](SAVING.md) for the others.
 
 ---
 
@@ -56,7 +56,7 @@ Resets internal log state (e.g. the “config loaded” one-time log guard). Use
 
 ### `getCallbacks()`
 
-Returns a copy of the currently configured callbacks (`defaultPrompt`, `onAskSaveAfterPrompt`, `onAskContext`).
+Returns a copy of the currently configured callbacks (`defaultPrompt`, `onAskWhetherToSave`, `onAskContext`).
 
 ---
 
@@ -104,7 +104,7 @@ Recursively finds all `*.context.json` files under `dir`.
 - **LogLevel** – `"none" | "trace" | "debug" | "info" | "warn" | "error"`. Default is `none` (no logging).
 - **PromptMode** – `"always" | "never" | "fallback" | "no-env"`.
 - **SavePromptMode** – `"always" | "never" | "ask"`.
-- **ScenvCallbacks** – `{ defaultPrompt?, onAskSaveAfterPrompt?, onAskContext? }`.
+- **ScenvCallbacks** – `{ defaultPrompt?, onAskWhetherToSave?, onAskContext? }`.
 - **DefaultPromptFn** – `(name, defaultValue) => value | Promise<value>`. Used as default when a variable has no `prompt`.
 - **ScenvVariable&lt;T&gt;** – `{ get(options?), safeGet(options?), save(value?) }`.
 - **GetOptions&lt;T&gt;** – `{ prompt?, default? }`. Optional overrides for a single `get()` or `safeGet()` call.

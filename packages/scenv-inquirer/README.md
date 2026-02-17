@@ -47,7 +47,7 @@ Variable-level `prompt` overrides this default.
 
 ### Save and context callbacks
 
-`askSaveAfterPrompt()` and `askContext()` return functions for scenv's `onAskSaveAfterPrompt` and `onAskContext` callbacks. Use them when `SCENV_SAVE_PROMPT=ask` or `saveContextTo: "ask"`.
+`askWhetherToSave()` and `askContext()` return functions for scenv's `onAskWhetherToSave` and `onAskContext` callbacks. Use them when `shouldSavePrompt` is `ask` or when `saveContextTo: "ask"`.
 
 **`callbacks()`** wires all of the above in one go:
 
@@ -63,17 +63,17 @@ configure({ ...yourConfig, ...callbacks() });
 This sets:
 
 - **defaultPrompt** – inquirer for variable values when no value is resolved
-- **onAskSaveAfterPrompt** – "Save '{name}' for next time?" then "Which context?"
-- **onAskContext** – "Save to which context?" (list or new)
+- **onAskWhetherToSave** – "Save '{name}' for next time?" (y/n). Only used when `shouldSavePrompt` is "ask" or "always".
+- **onAskContext** – "Save to which context?" (list or new). Used when `saveContextTo` is "ask" or when saving after prompt and destination is "ask".
 
 ## API
 
 | Export | Description |
 |--------|-------------|
 | `prompt()` | Returns `(name, defaultValue) => Promise<T>` for use as variable `prompt` or `callbacks.defaultPrompt`. |
-| `askSaveAfterPrompt()` | Returns `onAskSaveAfterPrompt`: asks whether to save and which context. |
+| `askWhetherToSave()` | Returns `onAskWhetherToSave`: asks whether to save (y/n). Where to save is handled by `saveContextTo` or `onAskContext`. |
 | `askContext()` | Returns `onAskContext`: asks which context to save to. |
-| `callbacks()` | Returns `{ callbacks: { defaultPrompt, onAskSaveAfterPrompt, onAskContext } }`. |
+| `callbacks()` | Returns `{ callbacks: { defaultPrompt, onAskWhetherToSave, onAskContext } }`. |
 
 ## License
 

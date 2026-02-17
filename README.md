@@ -53,7 +53,7 @@ await api_url.save();                   // write current value to a context file
 | [**Configuration**](docs/CONFIGURATION.md) | Config file, `SCENV_*` env vars, programmatic config, precedence. |
 | [**Contexts**](docs/CONTEXTS.md) | Context files, discovery, merge order, `--context` / `--add-context`. |
 | [**Resolution**](docs/RESOLUTION.md) | Resolution order, prompt modes (`always` / `never` / `fallback` / `no-env`), validation. |
-| [**Saving**](docs/SAVING.md) | `variable.save()`, `savePrompt`, `saveContextTo`, callbacks. |
+| [**Saving**](docs/SAVING.md) | `variable.save()`, `shouldSavePrompt`, `saveContextTo`, callbacks. |
 | [**API reference**](docs/API.md) | `scenv()`, `configure`, `loadConfig`, `parseScenvArgs`, types. |
 | [**Integration**](docs/INTEGRATION.md) | CLI integration, scenv-zod, scenv-inquirer. |
 

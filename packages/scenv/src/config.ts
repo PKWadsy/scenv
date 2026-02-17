@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
   defaultPrompt as defaultPromptFn,
-  defaultAskSaveAfterPrompt,
+  defaultAskWhetherToSave,
   defaultAskContext,
 } from "./prompt-default.js";
 
@@ -25,9 +25,9 @@ export interface ScenvConfig {
   ignoreContext?: boolean;
   /** Override values: key -> string (CLI: --set key=val) */
   set?: Record<string, string>;
-  /** When to ask "save for next time?" */
-  savePrompt?: SavePromptMode;
-  /** Where to save: context name or "ask" */
+  /** When to ask "save for next time?" after a prompt. Only in "ask" (or "always") mode is the onAskWhetherToSave callback used. */
+  shouldSavePrompt?: SavePromptMode;
+  /** Where to save: context name or "ask" (then onAskContext is used to pick). */
   saveContextTo?: "ask" | string;
   /** Root directory for config/context search (default: cwd) */
   root?: string;
@@ -43,7 +43,7 @@ const envKeyMap: Record<string, keyof ScenvConfig> = {
   SCENV_PROMPT: "prompt",
   SCENV_IGNORE_ENV: "ignoreEnv",
   SCENV_IGNORE_CONTEXT: "ignoreContext",
-  SCENV_SAVE_PROMPT: "savePrompt",
+  SCENV_SAVE_PROMPT: "shouldSavePrompt",
   SCENV_SAVE_CONTEXT_TO: "saveContextTo",
   SCENV_LOG_LEVEL: "logLevel",
 };
@@ -59,13 +59,12 @@ export type DefaultPromptFn = (
 export interface ScenvCallbacks {
   /** Default prompt when a variable does not provide its own `prompt`. Variable's `prompt` overrides this. */
   defaultPrompt?: DefaultPromptFn;
-  /** When user was just prompted for a value and savePrompt is ask/always: (variableName, value, contextNames) => context name to save to, or null to skip */
-  onAskSaveAfterPrompt?: (
+  /** Only called when shouldSavePrompt is "ask" or "always" and user was just prompted. (variableName, value) => true to save, false to skip. */
+  onAskWhetherToSave?: (
     name: string,
-    value: unknown,
-    contextNames: string[]
-  ) => Promise<string | null>;
-  /** When saveContextTo is "ask": (variableName, contextNames) => context name to save to */
+    value: unknown
+  ) => Promise<boolean>;
+  /** When save destination is ambiguous (saveContextTo is "ask" or after prompt when no single target): (variableName, contextNames) => context name to save to. */
   onAskContext?: (
     name: string,
     contextNames: string[]
@@ -76,8 +75,8 @@ let programmaticCallbacks: ScenvCallbacks = {};
 export function getCallbacks(): ScenvCallbacks {
   return {
     defaultPrompt: programmaticCallbacks.defaultPrompt ?? defaultPromptFn,
-    onAskSaveAfterPrompt:
-      programmaticCallbacks.onAskSaveAfterPrompt ?? defaultAskSaveAfterPrompt,
+    onAskWhetherToSave:
+      programmaticCallbacks.onAskWhetherToSave ?? defaultAskWhetherToSave,
     onAskContext: programmaticCallbacks.onAskContext ?? defaultAskContext,
   };
 }
@@ -113,7 +112,7 @@ function configFromEnv(): Partial<ScenvConfig> {
     } else if (configKey === "ignoreEnv" || configKey === "ignoreContext") {
       (out as Record<string, boolean>)[configKey] =
         val === "1" || val === "true" || val.toLowerCase() === "yes";
-    } else if (configKey === "prompt" || configKey === "savePrompt") {
+    } else if (configKey === "prompt" || configKey === "shouldSavePrompt") {
       const v = val.toLowerCase();
       if (
         configKey === "prompt" &&
@@ -121,7 +120,7 @@ function configFromEnv(): Partial<ScenvConfig> {
       )
         (out as Record<string, PromptMode>)[configKey] = v as PromptMode;
       if (
-        configKey === "savePrompt" &&
+        configKey === "shouldSavePrompt" &&
         (v === "always" || v === "never" || v === "ask")
       )
         (out as Record<string, SavePromptMode>)[configKey] = v as SavePromptMode;
@@ -164,10 +163,10 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
     if (parsed.set && typeof parsed.set === "object" && !Array.isArray(parsed.set))
       out.set = parsed.set as Record<string, string>;
     if (
-      typeof parsed.savePrompt === "string" &&
-      ["always", "never", "ask"].includes(parsed.savePrompt)
+      typeof (parsed.shouldSavePrompt ?? parsed.savePrompt) === "string" &&
+      ["always", "never", "ask"].includes((parsed.shouldSavePrompt ?? parsed.savePrompt) as string)
     )
-      out.savePrompt = parsed.savePrompt as SavePromptMode;
+      out.shouldSavePrompt = (parsed.shouldSavePrompt ?? parsed.savePrompt) as SavePromptMode;
     if (typeof parsed.saveContextTo === "string")
       out.saveContextTo = parsed.saveContextTo;
     if (typeof parsed.root === "string") out.root = parsed.root;

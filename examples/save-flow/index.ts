@@ -1,5 +1,5 @@
 /**
- * Save flow: variable.save(), saveContextTo, and callbacks (onAskContext, onAskSaveAfterPrompt).
+ * Save flow: variable.save(), saveContextTo, and callbacks (onAskContext, onAskWhetherToSave).
  * Runs non-interactively by providing callbacks that return fixed values.
  *
  * Run: cd examples/save-flow && pnpm start
@@ -25,9 +25,9 @@ configure({
       console.log("  [callback] onAskContext called:", { variableName, contextNames });
       return "saved";
     },
-    onAskSaveAfterPrompt: async (variableName, value, contextNames) => {
-      console.log("  [callback] onAskSaveAfterPrompt called:", { variableName, value, contextNames });
-      return "saved";
+    onAskWhetherToSave: async (variableName, value) => {
+      console.log("  [callback] onAskWhetherToSave called:", { variableName, value });
+      return true;
     },
   },
 });
@@ -56,7 +56,7 @@ async function main() {
   console.log("\n── Callbacks (getCallbacks) ──");
   const cb = getCallbacks();
   console.log("  onAskContext:", typeof cb.onAskContext);
-  console.log("  onAskSaveAfterPrompt:", typeof cb.onAskSaveAfterPrompt);
+  console.log("  onAskWhetherToSave:", typeof cb.onAskWhetherToSave);
   console.log("");
 }
 

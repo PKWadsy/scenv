@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Integrate scenv with your app's CLI: parse argv and pass to configure().
  * Then variables respect --set, --prompt, --context, etc.
@@ -15,7 +16,6 @@ configure(parseScenvArgs(process.argv.slice(2)));
 const api_url = scenv("API URL", {
   key: "api_url",
   env: "API_URL",
-  default: "http://localhost:4000",
 });
 
 async function main() {

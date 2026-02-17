@@ -65,7 +65,7 @@ Install: `pnpm add scenv scenv-inquirer inquirer`.
 
 ### Using scenv-inquirer for save and context prompts
 
-**`callbacks()`** returns `{ callbacks: { defaultPrompt, onAskSaveAfterPrompt, onAskContext } }` so one call wires inquirer as the default prompt for variables (when they don’t specify their own `prompt`) and for save/context asks:
+**`callbacks()`** returns `{ callbacks: { defaultPrompt, onAskWhetherToSave, onAskContext } }` so one call wires inquirer as the default prompt for variables (when they don’t specify their own `prompt`) and for save/context asks:
 
 ```ts
 import { configure } from "scenv";

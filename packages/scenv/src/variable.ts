@@ -188,26 +188,33 @@ export function scenv<T>(
     const final = validated.data;
     if (wasPrompted) {
       const config = loadConfig();
-      const savePrompt =
-        config.savePrompt ?? (config.prompt === "never" ? "never" : "ask");
+      const shouldSavePrompt =
+        config.shouldSavePrompt ?? (config.prompt === "never" ? "never" : "ask");
       const shouldAskSave =
-        savePrompt === "always" || (savePrompt === "ask" && wasPrompted);
+        shouldSavePrompt === "always" || (shouldSavePrompt === "ask" && wasPrompted);
       if (shouldAskSave) {
         const callbacks = getCallbacks();
-        if (typeof callbacks.onAskSaveAfterPrompt !== "function") {
+        if (typeof callbacks.onAskWhetherToSave !== "function") {
           throw new Error(
-            `savePrompt is "${savePrompt}" but onAskSaveAfterPrompt callback is not set. Configure callbacks via configure({ callbacks: { onAskSaveAfterPrompt: ... } }).`
+            `shouldSavePrompt is "${shouldSavePrompt}" but onAskWhetherToSave callback is not set. Configure callbacks via configure({ callbacks: { onAskWhetherToSave: ... } }).`
           );
         }
-        const ctxToSave = await callbacks.onAskSaveAfterPrompt(
-          name,
-          final,
-          config.contexts ?? []
-        );
-        if (ctxToSave) {
-          writeToContext(ctxToSave, key, String(final));
-          log("info", `Saved key=${key} to context ${ctxToSave}`);
+        const doSave = await callbacks.onAskWhetherToSave(name, final);
+        if (!doSave) return final;
+        const contextNames = config.contexts ?? [];
+        let ctxToSave: string;
+        if (config.saveContextTo === "ask") {
+          if (typeof callbacks.onAskContext !== "function") {
+            throw new Error(
+              `saveContextTo is "ask" but onAskContext callback is not set. Configure callbacks via configure({ callbacks: { onAskContext: ... } }).`
+            );
+          }
+          ctxToSave = await callbacks.onAskContext(name, contextNames);
+        } else {
+          ctxToSave = config.saveContextTo ?? contextNames[0] ?? "default";
         }
+        writeToContext(ctxToSave, key, String(final));
+        log("info", `Saved key=${key} to context ${ctxToSave}`);
       }
     }
     return final;

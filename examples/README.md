@@ -20,7 +20,7 @@ cd examples/<name> && pnpm start
 | **full-demo** | Config file, context discovery, merged context values, resolution order, validation, `safeGet()` failure, optional save to context. Multiple npm scripts for different scenarios. |
 | **contexts** | Context merge order: `base` then `overlay`; later overwrites earlier. Try `pnpm run start:overlay-first` for `--context overlay,base` (base wins where both set). |
 | **with-config-file** | All config from `scenv.config.json` (no programmatic config); env overlays. |
-| **save-flow** | `variable.save()`, `saveContextTo: "ask"`, `onAskContext` and `onAskSaveAfterPrompt` callbacks (non-interactive). |
+| **save-flow** | `variable.save()`, `saveContextTo: "ask"`, `onAskContext` and `onAskWhetherToSave` callbacks (non-interactive). |
 
 ## Full demo (recommended)
 

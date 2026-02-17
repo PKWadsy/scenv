@@ -43,22 +43,16 @@ export function defaultPrompt<T>(
 }
 
 /**
- * Default "save after prompt" callback: asks whether to save and which context.
- * Used when savePrompt is ask/always and no onAskSaveAfterPrompt is configured.
+ * Default "whether to save" callback: asks yes/no. Only used when shouldSavePrompt is "ask" or "always".
+ * Where to save is handled separately by onAskContext when ambiguous.
  */
-export async function defaultAskSaveAfterPrompt(
+export async function defaultAskWhetherToSave(
   name: string,
-  _value: unknown,
-  contextNames: string[]
-): Promise<string | null> {
-  const hint = contextNames.length > 0
-    ? ` (${contextNames.join(", ")} or n to skip)`
-    : " (context name or n to skip)";
-  const answer = await ask(`Save "${name}" for next time?${hint}: `);
-  if (!answer || answer.toLowerCase() === "n" || answer.toLowerCase() === "no") {
-    return null;
-  }
-  return answer;
+  _value: unknown
+): Promise<boolean> {
+  const answer = await ask(`Save "${name}" for next time? (y/n): `);
+  const v = answer.toLowerCase();
+  return v === "y" || v === "yes" || v === "1" || v === "true";
 }
 
 /**

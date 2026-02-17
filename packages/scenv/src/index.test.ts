@@ -23,7 +23,7 @@ describe("index", () => {
     expect(config).toHaveProperty("contexts");
     const cb = getCallbacks();
     expect(typeof cb.defaultPrompt).toBe("function");
-    expect(typeof cb.onAskSaveAfterPrompt).toBe("function");
+    expect(typeof cb.onAskWhetherToSave).toBe("function");
     expect(typeof cb.onAskContext).toBe("function");
   });
 

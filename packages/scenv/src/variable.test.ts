@@ -91,7 +91,7 @@ describe("variable", () => {
   });
 
   it("get({ prompt: fn }) overrides variable prompt for that call", async () => {
-    configure({ prompt: "always", savePrompt: "never" });
+    configure({ prompt: "always", shouldSavePrompt: "never" });
     const v = scenv("Prompted", {
       key: "prompted_key",
       default: "var-default",
@@ -104,7 +104,7 @@ describe("variable", () => {
   });
 
   it("get({ default, prompt }) applies both overrides for that call", async () => {
-    configure({ prompt: "fallback", savePrompt: "never" });
+    configure({ prompt: "fallback", shouldSavePrompt: "never" });
     const v = scenv("Both", { key: "both_key" });
     const value = await v.get({
       default: "call-default",
@@ -155,7 +155,7 @@ describe("variable", () => {
   });
 
   it("get() uses custom prompt when prompt mode is always", async () => {
-    configure({ prompt: "always", savePrompt: "never" });
+    configure({ prompt: "always", shouldSavePrompt: "never" });
     const v = scenv("Prompted Var", {
       key: "prompted_var",
       default: "default-val",
@@ -170,7 +170,7 @@ describe("variable", () => {
   });
 
   it("get() uses custom prompt when prompt mode fallback and no value", async () => {
-    configure({ prompt: "fallback", savePrompt: "never" });
+    configure({ prompt: "fallback", shouldSavePrompt: "never" });
     const v = scenv("Fallback Var", {
       key: "fallback_var",
       prompt: () => "fallback-typed",
@@ -182,7 +182,7 @@ describe("variable", () => {
   it("get() uses callbacks.defaultPrompt when variable has no prompt option", async () => {
     configure({
       prompt: "fallback",
-      savePrompt: "never",
+      shouldSavePrompt: "never",
       callbacks: {
         defaultPrompt: async (name, defaultVal) => {
           expect(name).toBe("No Var Prompt");
@@ -203,7 +203,7 @@ describe("variable", () => {
     const defaultPromptCalled: string[] = [];
     configure({
       prompt: "fallback",
-      savePrompt: "never",
+      shouldSavePrompt: "never",
       callbacks: {
         defaultPrompt: async (name) => {
           defaultPromptCalled.push(name);
@@ -221,7 +221,7 @@ describe("variable", () => {
   });
 
   it("get() prompts when prompt mode fallback and only default exists (no set/env/context)", async () => {
-    configure({ prompt: "fallback", savePrompt: "never" });
+    configure({ prompt: "fallback", shouldSavePrompt: "never" });
     const v = scenv("Core Server URL", {
       key: "core_server_url",
       env: "CORE_SERVER_URL",
@@ -248,15 +248,20 @@ describe("variable", () => {
     delete process.env.CORE_SERVER_URL;
   });
 
-  it("get() calls onAskSaveAfterPrompt when prompted and savePrompt is ask", async () => {
+  it("get() calls onAskWhetherToSave then onAskContext when prompted and shouldSavePrompt is ask", async () => {
     configure({
       prompt: "always",
-      savePrompt: "ask",
+      shouldSavePrompt: "ask",
+      saveContextTo: "ask",
       contexts: ["ctx1"],
       callbacks: {
-        onAskSaveAfterPrompt: async (name, value, contextNames) => {
+        onAskWhetherToSave: async (name, value) => {
           expect(name).toBe("Save Me");
           expect(value).toBe("saved-value");
+          return true;
+        },
+        onAskContext: async (name, contextNames) => {
+          expect(name).toBe("Save Me");
           expect(contextNames).toEqual(["ctx1"]);
           return "savedctx";
         },
@@ -274,13 +279,13 @@ describe("variable", () => {
     expect(data.save_me).toBe("saved-value");
   });
 
-  it("get() does not save when onAskSaveAfterPrompt returns null", async () => {
+  it("get() does not save when onAskWhetherToSave returns false", async () => {
     configure({
       prompt: "always",
-      savePrompt: "ask",
+      shouldSavePrompt: "ask",
       contexts: ["ctx1"],
       callbacks: {
-        onAskSaveAfterPrompt: async () => null,
+        onAskWhetherToSave: async () => false,
       },
     });
     const v = scenv("No Save", { key: "no_save", prompt: () => "x" });

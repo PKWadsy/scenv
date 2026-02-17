@@ -27,20 +27,14 @@ export function prompt<T = string>(): (
 }
 
 /**
- * Returns a function suitable for scenv's onAskSaveAfterPrompt callback.
- * Asks "Save '{name}' for next time?" and, if yes, "Which context?" (from contextNames or new).
- * @returns Context name to save to, or null to skip saving
+ * Returns a function suitable for scenv's onAskWhetherToSave callback.
+ * Asks "Save '{name}' for next time?" (y/n). Where to save is handled separately by onAskContext when saveContextTo is "ask".
  */
-export function askSaveAfterPrompt(): (
+export function askWhetherToSave(): (
   name: string,
-  value: unknown,
-  contextNames: string[]
-) => Promise<string | null> {
-  return async (
-    name: string,
-    _value: unknown,
-    contextNames: string[]
-  ): Promise<string | null> => {
+  value: unknown
+) => Promise<boolean> {
+  return async (name: string, _value: unknown): Promise<boolean> => {
     const { save } = await inquirer.prompt<{ save: boolean }>([
       {
         type: "confirm",
@@ -49,25 +43,7 @@ export function askSaveAfterPrompt(): (
         default: true,
       },
     ]);
-    if (!save) return null;
-    const choices = [...contextNames];
-    if (choices.length === 0) choices.push("default");
-    choices.push("(new context)");
-    const { context } = await inquirer.prompt<{ context: string }>([
-      {
-        type: "list",
-        name: "context",
-        message: "Which context?",
-        choices,
-      },
-    ]);
-    if (context === "(new context)") {
-      const { newContext } = await inquirer.prompt<{ newContext: string }>([
-        { type: "input", name: "newContext", message: "Context name:", default: "default" },
-      ]);
-      return newContext.trim() || "default";
-    }
-    return context;
+    return save;
   };
 }
 
@@ -102,20 +78,20 @@ export function askContext(): (
 }
 
 /**
- * Returns an object suitable for scenv's configure(): { callbacks: { defaultPrompt, onAskSaveAfterPrompt, onAskContext } }.
+ * Returns an object suitable for scenv's configure(): { callbacks: { defaultPrompt, onAskWhetherToSave, onAskContext } }.
  * Use as configure(callbacks()) or configure({ ...config, ...callbacks() }) to wire a default inquirer prompt for variables and save/context prompts via inquirer. Variable-level prompt overrides defaultPrompt.
  */
 export function callbacks(): {
   callbacks: {
     defaultPrompt: ReturnType<typeof prompt>;
-    onAskSaveAfterPrompt: ReturnType<typeof askSaveAfterPrompt>;
+    onAskWhetherToSave: ReturnType<typeof askWhetherToSave>;
     onAskContext: ReturnType<typeof askContext>;
   };
 } {
   return {
     callbacks: {
       defaultPrompt: prompt(),
-      onAskSaveAfterPrompt: askSaveAfterPrompt(),
+      onAskWhetherToSave: askWhetherToSave(),
       onAskContext: askContext(),
     },
   };

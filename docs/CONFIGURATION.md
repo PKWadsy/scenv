@@ -24,7 +24,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 | `ignoreEnv` | `boolean` | If `true`, environment variables are not used during resolution. |
 | `ignoreContext` | `boolean` | If `true`, context files are not used during resolution. |
 | `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. |
-| `savePrompt` | `"always"` \| `"never"` \| `"ask"` | When to ask “save for next time?” after the user is prompted for a value; see [Saving](SAVING.md). |
+| `shouldSavePrompt` | `"always"` \| `"never"` \| `"ask"` | When to ask “save for next time?” after the user is prompted for a value; see [Saving](SAVING.md). |
 | `saveContextTo` | `"ask"` \| `string` | Where to save when writing a variable: a context name, or `"ask"` to use the callback. |
 | `root` | `string` | Directory used as root for config and context search (optional). |
 | `logLevel` | `"none"` \| `"trace"` \| `"debug"` \| `"info"` \| `"warn"` \| `"error"` | Logging level; default is `none` (no logs). Logs go to stderr. |
@@ -36,7 +36,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
   "contexts": ["dev", "prod"],
   "prompt": "fallback",
   "ignoreEnv": false,
-  "savePrompt": "ask",
+  "shouldSavePrompt": "ask",
   "saveContextTo": "ask"
 }
 ```
@@ -54,7 +54,7 @@ Any of the config keys above can be set via environment variables. The mapping i
 | `SCENV_PROMPT` | `prompt` | `always`, `never`, `fallback`, `no-env`. |
 | `SCENV_IGNORE_ENV` | `ignoreEnv` | `1`, `true`, or `yes` → true. |
 | `SCENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
-| `SCENV_SAVE_PROMPT` | `savePrompt` | `always`, `never`, `ask`. |
+| `SCENV_SAVE_PROMPT` | `shouldSavePrompt` | `always`, `never`, `ask`. |
 | `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Context name or `ask`. |
 | `SCENV_LOG_LEVEL` | `logLevel` | `none`, `trace`, `debug`, `info`, `warn`, `error`. |
 
@@ -87,7 +87,7 @@ configure({
   set: { api_url: "https://custom.example.com" },
   callbacks: {
     onAskContext: async (name, contextNames) => { /* ... */ },
-    onAskSaveAfterPrompt: async (name, value, contextNames) => { /* ... */ },
+    onAskWhetherToSave: async (name, value) => { /* ... */ },
   },
 });
 ```

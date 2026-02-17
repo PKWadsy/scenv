@@ -50,7 +50,7 @@ describe("parseScenvArgs", () => {
       "--save-context-to",
       "prod",
     ]);
-    expect(config.savePrompt).toBe("ask");
+    expect(config.shouldSavePrompt).toBe("ask");
     expect(config.saveContextTo).toBe("prod");
   });
 
