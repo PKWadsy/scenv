@@ -1,10 +1,10 @@
 # scenv
 
-**Where did that config come from?** Env vars? A file? Something you typed last time? Scenv sorts it out. ✨
+**Run the same script with different config—env, context files, or CLI—without changing code.**
 
-Scenv is a small **library** that gives you one clear way to define “this app needs an API URL, a port, a feature flag…” and then figures out the value at runtime: from CLI overrides, environment variables, **context files** (think per-environment or per-run JSON), or a default. You don’t bake “always use env” or “never prompt” into each variable—you control that with config (file, env, or whatever your app passes in). So the same codebase can be strict in CI, interactive in dev, and override-friendly from the command line.
+Scenv is a small **library** that lets you define “this app needs an API URL, a port, a feature flag…” once, then run it easily with whatever source you need: CLI overrides, environment variables, **context files** (per-environment or per-run JSON), or defaults. You control behavior via config (file, env, or programmatic), so the same codebase runs strict in CI, interactive in dev, and override-friendly from the command line.
 
-No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `scenv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/scenv-zod) for validation and [Inquirer](packages/scenv-inquirer) for prompts. One API, many sources—no more “is this from .env or a flag?” detective work.
+No CLI binary—your app stays in charge. You call `configure()` (e.g. with parsed CLI flags), define variables with `scenv()`, and use `.get()` or `.safeGet()`. Optionally plug in [Zod](packages/scenv-zod) for validation and [Inquirer](packages/scenv-inquirer) for prompts. One API, many sources—run quickly with the right config for each run.
 
 ---
 
