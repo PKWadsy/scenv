@@ -19,6 +19,7 @@ import {
   scenv,
   getMergedContextValues,
   discoverContextPaths,
+  getContextWritePath,
 } from "scenv";
 import { validator } from "scenv-zod";
 import { z } from "zod";
@@ -103,14 +104,14 @@ async function main() {
     console.log("  required_missing: failed (expected)", (result as { error?: unknown }).error instanceof Error ? (result as { error: Error }).error.message : "");
   }
 
-  if (config.saveContextTo && config.saveContextTo !== "ask") {
+  if (config.saveContextTo) {
     console.log("\n── Save to context ──");
     const toSave = scenv("Saved value", {
       key: "demo_saved_at",
       default: new Date().toISOString(),
     });
     await toSave.save();
-    const savePath = join(root, `${config.saveContextTo}.context.json`);
+    const savePath = getContextWritePath(config.saveContextTo);
     if (existsSync(savePath)) {
       const saved = JSON.parse(readFileSync(savePath, "utf-8"));
       console.log("  wrote to", config.saveContextTo + ".context.json");

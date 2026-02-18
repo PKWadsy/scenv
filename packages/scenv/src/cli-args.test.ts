@@ -43,14 +43,8 @@ describe("parseScenvArgs", () => {
     expect(config.set).toEqual({ core_server_url: "localhost:7000" });
   });
 
-  it("parses --save-prompt and --save-context-to", () => {
-    const config = parseScenvArgs([
-      "--save-prompt",
-      "ask",
-      "--save-context-to",
-      "prod",
-    ]);
-    expect(config.shouldSavePrompt).toBe("ask");
+  it("parses --save-context-to", () => {
+    const config = parseScenvArgs(["--save-context-to", "prod"]);
     expect(config.saveContextTo).toBe("prod");
   });
 

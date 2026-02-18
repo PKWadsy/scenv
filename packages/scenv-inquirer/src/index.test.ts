@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { configure, resetConfig, scenv, getCallbacks } from "scenv";
 import type { ScenvCallbacks } from "scenv";
-import { prompt, askWhetherToSave, askContext, callbacks } from "./index.js";
+import { prompt, callbacks } from "./index.js";
 
 describe("scenv-inquirer", () => {
   beforeEach(() => {
@@ -12,8 +12,6 @@ describe("scenv-inquirer", () => {
     const { callbacks: cbs } = callbacks();
     const _typed: ScenvCallbacks = cbs;
     expect(typeof cbs.defaultPrompt).toBe("function");
-    expect(typeof cbs.onAskWhetherToSave).toBe("function");
-    expect(typeof cbs.onAskContext).toBe("function");
   });
 
   it("configure() accepts callbacks() and getCallbacks() returns them", () => {
@@ -21,8 +19,6 @@ describe("scenv-inquirer", () => {
     configure({ callbacks: cbs });
     const fromScenv = getCallbacks();
     expect(fromScenv.defaultPrompt).toBe(cbs.defaultPrompt);
-    expect(fromScenv.onAskWhetherToSave).toBe(cbs.onAskWhetherToSave);
-    expect(fromScenv.onAskContext).toBe(cbs.onAskContext);
   });
 
   it("scenv variable resolves with inquirer callbacks configured and prompt never", async () => {
@@ -34,18 +30,6 @@ describe("scenv-inquirer", () => {
 
   it("prompt() return is assignable to DefaultPromptFn", () => {
     const fn = prompt();
-    expect(typeof fn).toBe("function");
-    expect(fn.length).toBe(2);
-  });
-
-  it("askWhetherToSave() return has correct signature", () => {
-    const fn = askWhetherToSave();
-    expect(typeof fn).toBe("function");
-    expect(fn.length).toBe(2);
-  });
-
-  it("askContext() return has correct signature", () => {
-    const fn = askContext();
     expect(typeof fn).toBe("function");
     expect(fn.length).toBe(2);
   });

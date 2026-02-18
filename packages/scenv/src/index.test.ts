@@ -7,6 +7,8 @@ import {
   getMergedContextValues,
   getContext,
   discoverContextPaths,
+  getInMemoryContext,
+  resetInMemoryContext,
   scenv,
   parseScenvArgs,
   resetLogState,
@@ -24,14 +26,14 @@ describe("index", () => {
     expect(config).toHaveProperty("context");
     const cb = getCallbacks();
     expect(typeof cb.defaultPrompt).toBe("function");
-    expect(typeof cb.onAskWhetherToSave).toBe("function");
-    expect(typeof cb.onAskContext).toBe("function");
   });
 
-  it("re-exports getMergedContextValues, getContext, discoverContextPaths", () => {
+  it("re-exports getMergedContextValues, getContext, discoverContextPaths, getInMemoryContext, resetInMemoryContext", () => {
     expect(typeof getMergedContextValues).toBe("function");
     expect(typeof getContext).toBe("function");
     expect(typeof discoverContextPaths).toBe("function");
+    expect(typeof getInMemoryContext).toBe("function");
+    expect(typeof resetInMemoryContext).toBe("function");
   });
 
   it("re-exports scenv, parseScenvArgs", () => {

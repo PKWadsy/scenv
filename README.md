@@ -53,7 +53,7 @@ await api_url.save();                   // write current value to a context file
 | [**Configuration**](docs/CONFIGURATION.md) | Config file, `SCENV_*` env vars, programmatic config, precedence. |
 | [**Contexts**](docs/CONTEXTS.md) | Context files, discovery, merge order, `--context` / `--add-context`. |
 | [**Resolution**](docs/RESOLUTION.md) | Resolution order, prompt modes (`always` / `never` / `fallback` / `no-env`), validation. |
-| [**Saving**](docs/SAVING.md) | `variable.save()`, `shouldSavePrompt`, `saveContextTo`, callbacks. |
+| [**Saving**](docs/SAVING.md) | `variable.save()`, `saveContextTo`, in-memory and file context. |
 | [**API reference**](docs/API.md) | `scenv()`, `configure`, `loadConfig`, `parseScenvArgs`, types. |
 | [**Integration**](docs/INTEGRATION.md) | CLI integration, scenv-zod, scenv-inquirer. |
 
@@ -92,7 +92,7 @@ See [examples/](examples/README.md) for runnable demos—or jump straight to `ex
 - **full-demo** – The kitchen sink: config file, contexts, resolution, validation, save, CLI. Run `pnpm start` in `examples/full-demo`.
 - **contexts** – Context merge order; `--context overlay,base`.
 - **with-config-file** – All config from `scenv.config.json`.
-- **save-flow** – `save()`, `saveContextTo: "ask"`, callbacks.
+- **save-flow** – `save()`, `saveContextTo`, in-memory and file.
 
 ---
 

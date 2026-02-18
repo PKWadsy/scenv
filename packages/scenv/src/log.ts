@@ -37,7 +37,7 @@ export function resetLogState(): void {
 
 const CONFIG_LOG_KEYS: (keyof ScenvConfig)[] = [
   "root", "context", "prompt", "ignoreEnv", "ignoreContext",
-  "set", "shouldSavePrompt", "saveContextTo", "contextDir", "logLevel",
+  "set", "saveContextTo", "contextDir", "logLevel",
 ];
 
 /** Serializes config for logging. Omits undefined; addContext is excluded (merged into context). */
@@ -67,7 +67,6 @@ export function logConfigLoaded(config: ScenvConfig): void {
     if (config.ignoreContext === true) parts.push("ignoreContext=true");
     if (config.saveContextTo !== undefined) parts.push("saveContextTo=" + config.saveContextTo);
     if (config.contextDir !== undefined) parts.push("contextDir=" + config.contextDir);
-    if (config.shouldSavePrompt !== undefined) parts.push("shouldSavePrompt=" + config.shouldSavePrompt);
     log("info", "config loaded", parts.join(" "));
   }
 

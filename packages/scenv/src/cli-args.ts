@@ -12,8 +12,7 @@ import { LOG_LEVELS, type LogLevel } from "./config.js";
  * - `--ignore-env` – Set ignoreEnv to true.
  * - `--ignore-context` – Set ignoreContext to true.
  * - `--set key=value` or `--set=key=value` – Add to set overrides (multiple allowed).
- * - `--save-prompt always|never|ask` – shouldSavePrompt.
- * - `--save-context-to name` – saveContextTo.
+ * - `--save-context-to pathOrName` – saveContextTo (path or context name without .context.json).
  * - `--context-dir path` – contextDir (directory to save context files to by default).
  * - `--log-level level`, `--log level`, `--log=level` – logLevel.
  *
@@ -44,11 +43,6 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
       if (eq > 0) {
         config.set = config.set ?? {};
         config.set[pair.slice(0, eq).trim()] = pair.slice(eq + 1).trim();
-      }
-    } else if (arg === "--save-prompt" && argv[i + 1] !== undefined) {
-      const v = argv[++i].toLowerCase();
-      if (["always", "never", "ask"].includes(v)) {
-        config.shouldSavePrompt = v as ScenvConfig["shouldSavePrompt"];
       }
     } else if (arg === "--save-context-to" && argv[i + 1] !== undefined) {
       config.saveContextTo = argv[++i];

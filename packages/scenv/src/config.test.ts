@@ -126,13 +126,13 @@ describe("config", () => {
     delete process.env.SCENV_IGNORE_ENV;
   });
 
-  it("env SCENV_SAVE_PROMPT=ask and SCENV_PROMPT=no-env", () => {
-    process.env.SCENV_SAVE_PROMPT = "ask";
+  it("env SCENV_SAVE_CONTEXT_TO and SCENV_PROMPT", () => {
+    process.env.SCENV_SAVE_CONTEXT_TO = "myctx";
     process.env.SCENV_PROMPT = "no-env";
     const config = loadConfig(tmpDir);
-    expect(config.shouldSavePrompt).toBe("ask");
+    expect(config.saveContextTo).toBe("myctx");
     expect(config.prompt).toBe("no-env");
-    delete process.env.SCENV_SAVE_PROMPT;
+    delete process.env.SCENV_SAVE_CONTEXT_TO;
     delete process.env.SCENV_PROMPT;
   });
 
@@ -140,16 +140,6 @@ describe("config", () => {
     resetConfig();
     const cb = getCallbacks();
     expect(typeof cb.defaultPrompt).toBe("function");
-    expect(typeof cb.onAskWhetherToSave).toBe("function");
-    expect(typeof cb.onAskContext).toBe("function");
-  });
-
-  it("configure with callbacks merges callbacks", () => {
-    const askContext = async () => "ctx";
-    configure({ root: tmpDir, callbacks: { onAskContext: askContext } });
-    const cb = getCallbacks();
-    expect(cb.onAskContext).toBe(askContext);
-    resetConfig();
   });
 
   it("configure with callbacks merges defaultPrompt", () => {

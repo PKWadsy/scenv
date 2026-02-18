@@ -33,64 +33,10 @@ export function prompt<T = string>(): DefaultPromptFn {
 }
 
 /**
- * Returns a function suitable for scenv's {@link ScenvCallbacks.onAskWhetherToSave} callback.
- * Uses inquirer confirm to ask "Save '{name}' for next time?" (y/n). Where to save is
- * determined by config.saveContextTo or the onAskContext callback when saveContextTo is "ask".
- * Only called when {@link ScenvConfig.shouldSavePrompt} is "ask" and the user was just prompted. ("always" saves without asking.)
+ * Returns an object with the defaultPrompt callback for scenv. Pass to {@link configure}
+ * to use inquirer for variable prompts. Variable-level `prompt` overrides defaultPrompt.
  *
- * @returns A function `(name, value) => Promise<boolean>`: true to save, false to skip.
- */
-export function askWhetherToSave(): NonNullable<ScenvCallbacks["onAskWhetherToSave"]> {
-  return async (name: string, _value: unknown): Promise<boolean> => {
-    const { save } = await inquirer.prompt<{ save: boolean }>([
-      {
-        type: "confirm",
-        name: "save",
-        message: `Save "${name}" for next time?`,
-        default: true,
-      },
-    ]);
-    return save;
-  };
-}
-
-/**
- * Returns a function suitable for scenv's {@link ScenvCallbacks.onAskContext} callback.
- * Uses inquirer list to choose a context from contextNames, with a "(new context)" option
- * that prompts for a new name. Used when {@link ScenvConfig.saveContextTo} is "ask" or
- * when saving after a prompt and the destination is "ask".
- *
- * @returns A function `(name, contextNames) => Promise<string>` that returns the chosen context name.
- */
-export function askContext(): NonNullable<ScenvCallbacks["onAskContext"]> {
-  return async (name: string, contextNames: string[]): Promise<string> => {
-    const choices = [...contextNames];
-    if (choices.length === 0) choices.push("default");
-    choices.push("(new context)");
-    const { context } = await inquirer.prompt<{ context: string }>([
-      {
-        type: "list",
-        name: "context",
-        message: `Save "${name}" to which context?`,
-        choices,
-      },
-    ]);
-    if (context === "(new context)") {
-      const { newContext } = await inquirer.prompt<{ newContext: string }>([
-        { type: "input", name: "newContext", message: "Context name:", default: "default" },
-      ]);
-      return newContext.trim() || "default";
-    }
-    return context;
-  };
-}
-
-/**
- * Returns an object with all inquirer-based callbacks for scenv. Pass to {@link configure}
- * to use inquirer for variable prompts, "save for next time?", and "which context?".
- * Variable-level `prompt` overrides defaultPrompt.
- *
- * @returns `{ callbacks: { defaultPrompt, onAskWhetherToSave, onAskContext } }` – spread into configure() or merge with other config.
+ * @returns `{ callbacks: { defaultPrompt } }` – spread into configure() or merge with other config.
  *
  * @example
  * import { configure } from "scenv";
@@ -99,10 +45,5 @@ export function askContext(): NonNullable<ScenvCallbacks["onAskContext"]> {
  * // or: configure({ ...parseScenvArgs(process.argv.slice(2)), ...callbacks() });
  */
 export function callbacks(): { callbacks: ScenvCallbacks } {
-  const cbs: ScenvCallbacks = {
-    defaultPrompt: prompt(),
-    onAskWhetherToSave: askWhetherToSave(),
-    onAskContext: askContext(),
-  };
-  return { callbacks: cbs };
+  return { callbacks: { defaultPrompt: prompt() } };
 }

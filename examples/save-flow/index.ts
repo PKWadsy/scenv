@@ -1,6 +1,6 @@
 /**
- * Save flow: variable.save(), saveContextTo, and callbacks (onAskContext, onAskWhetherToSave).
- * Runs non-interactively by providing callbacks that return fixed values.
+ * Save flow: variable.save(), saveContextTo (path or context name).
+ * Values are always stored in-memory; when saveContextTo is set they are also written to that file.
  *
  * Run: cd examples/save-flow && pnpm start
  */
@@ -8,6 +8,7 @@ import {
   configure,
   scenv,
   getCallbacks,
+  getContextWritePath,
 } from "scenv";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -19,27 +20,17 @@ configure({
   root: __dirname,
   context: ["saved"],
   prompt: "never",
-  saveContextTo: "ask",
-  callbacks: {
-    onAskContext: async (variableName, contextNames) => {
-      console.log("  [callback] onAskContext called:", { variableName, contextNames });
-      return "saved";
-    },
-    onAskWhetherToSave: async (variableName, value) => {
-      console.log("  [callback] onAskWhetherToSave called:", { variableName, value });
-      return true;
-    },
-  },
+  saveContextTo: "saved",
 });
 
 async function main() {
-  console.log("\n── Save with saveContextTo: ask (onAskContext) ──");
+  console.log("\n── Save with saveContextTo: saved ──");
   const toSave = scenv("Token", {
     key: "api_token",
     default: "demo-token-123",
   });
   await toSave.save();
-  const path = join(__dirname, "saved.context.json");
+  const path = getContextWritePath("saved");
   if (existsSync(path)) {
     const data = JSON.parse(readFileSync(path, "utf-8"));
     console.log("  Written to saved.context.json:", data);
@@ -55,8 +46,7 @@ async function main() {
 
   console.log("\n── Callbacks (getCallbacks) ──");
   const cb = getCallbacks();
-  console.log("  onAskContext:", typeof cb.onAskContext);
-  console.log("  onAskWhetherToSave:", typeof cb.onAskWhetherToSave);
+  console.log("  defaultPrompt:", typeof cb.defaultPrompt);
   console.log("");
 }
 

@@ -18,7 +18,7 @@ Creates a scenv variable.
 
 - **get(options?)** – `Promise<T>`. Resolves the value; throws if missing or validation fails. **options** (optional): `{ prompt?, default? }` – override the prompt function or default for this call only.
 - **safeGet(options?)** – `Promise<{ success: true; value: T } | { success: false; error?: unknown }>`. Never throws. Same optional **options** as `get()`.
-- **save(value?: T)** – `Promise<void>`. Writes the value (or the last resolved value) to a context file.
+- **save(value?: T)** – `Promise<void>`. Writes the value (or the last resolved value) to the save target: the file at `saveContextTo` if set, and always to the in-memory context.
 
 ---
 
@@ -27,9 +27,8 @@ Creates a scenv variable.
 Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file. You can call `configure()` multiple times; each call is **merged (shallow)** with the previous programmatic config and callbacks—later values overwrite earlier for the same key; objects like `set` and `callbacks` are replaced, not deep-merged.
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
-  - Config keys: `context`, `addContext`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `shouldSavePrompt`, `saveContextTo`, `contextDir`, `root`, `logLevel`.
-  - **callbacks**: `{ defaultPrompt?, onAskWhetherToSave?, onAskContext? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). See [Saving](SAVING.md) for the others.
-
+  - Config keys: `context`, `addContext`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `saveContextTo`, `contextDir`, `root`, `logLevel`.
+  - **callbacks**: `{ defaultPrompt? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). 
 ---
 
 ### `loadConfig(root?)`
@@ -56,7 +55,7 @@ Resets internal log state (e.g. the “config loaded” one-time log guard). Use
 
 ### `getCallbacks()`
 
-Returns a copy of the currently configured callbacks (`defaultPrompt`, `onAskWhetherToSave`, `onAskContext`).
+Returns a copy of the currently configured callbacks (`defaultPrompt`).
 
 ---
 
@@ -73,8 +72,7 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 - `--ignore-context`
 - `--set key=value` (multiple allowed)
 - `--set=key=value`
-- `--save-prompt always|never|ask`
-- `--save-context-to name`
+- `--save-context-to pathOrName` – Path or context name (without `.context.json`) where to save variables.
 - `--context-dir path` – Directory to save context files to by default.
 - `--log-level level` / `--log level` / `--log=level` – Log level: `none` (default), `trace`, `debug`, `info`, `warn`, `error`.
 
@@ -127,8 +125,7 @@ Recursively finds all `*.context.json` files under `dir`.
 - **ScenvConfig** – Full config shape (see [Configuration](CONFIGURATION.md)).
 - **LogLevel** – `"none" | "trace" | "debug" | "info" | "warn" | "error"`. Default is `none` (no logging).
 - **PromptMode** – `"always" | "never" | "fallback" | "no-env"`.
-- **SavePromptMode** – `"always" | "never" | "ask"`. After a prompt: never = don't save, always = save without asking, ask = call onAskWhetherToSave.
-- **ScenvCallbacks** – `{ defaultPrompt?, onAskWhetherToSave?, onAskContext? }`.
+- **ScenvCallbacks** – `{ defaultPrompt? }`.
 - **DefaultPromptFn** – `(name, defaultValue) => value | Promise<value>`. Used as default when a variable has no `prompt`.
 - **ScenvVariable&lt;T&gt;** – `{ get(options?), safeGet(options?), save(value?) }`.
 - **GetOptions&lt;T&gt;** – `{ prompt?, default? }`. Optional overrides for a single `get()` or `safeGet()` call.

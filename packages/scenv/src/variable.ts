@@ -1,5 +1,11 @@
 import { loadConfig, getCallbacks } from "./config.js";
-import { getMergedContextValues, getContext, writeToContext } from "./context.js";
+import {
+  getMergedContextValues,
+  getContext,
+  writeToContext,
+  getInMemoryContext,
+  setInMemoryContext,
+} from "./context.js";
 import { log, logConfigLoaded } from "./log.js";
 
 /** Matches @<context>:<key> for explicit context and key. */
@@ -152,8 +158,8 @@ export interface ScenvVariable<T> {
     { success: true; value: T } | { success: false; error?: unknown }
   >;
   /**
-   * Write the value to a context file (e.g. for next run). Target context comes from config.saveContextTo or onAskContext.
-   * If you don't pass a value, the last resolved value is used. Does not prompt "save?"; it saves.
+   * Write the value to the save target: if config.saveContextTo is set, to that context file; otherwise to in-memory only.
+   * If you don't pass a value, the last resolved value is used. Does not prompt; it saves. The value is always stored in-memory so the next get() sees it.
    */
   save(value?: T): Promise<void>;
 }
@@ -184,9 +190,9 @@ export interface ScenvVariable<T> {
  * ## save()
  *
  * The variable has a save(value?) method. It writes the value (or the last resolved value if you omit it)
- * to a context file. The target context comes from config.saveContextTo or from the onAskContext callback
- * when saveContextTo is "ask". save() does not ask "save?"; it saves. Optional "save after prompt" behavior
- * is controlled by config.shouldSavePrompt and callbacks.onAskWhetherToSave.
+ * to the save target (config.saveContextTo file if set, otherwise in-memory). save() does not ask; it saves.
+ * When the user is prompted during get(), the value is always saved (to saveContextTo file if set, and always to in-memory)
+ * so a second get() on the same variable does not prompt again.
  *
  * @typeParam T - Value type (default string). Use a validator to coerce to number, boolean, etc.
  * @param name - Display name used in prompts and errors. If you omit key/env, key is derived from name (e.g. "API URL" → "api_url") and env from key (e.g. "API_URL").
@@ -228,6 +234,12 @@ export function scenv<T>(
         const raw = resolveContextReference(envVal, key);
         return { raw, source: "env" };
       }
+    }
+    const mem = getInMemoryContext();
+    if (mem[key] !== undefined) {
+      log("trace", `resolveRaw: in-memory hit key=${key}`);
+      const raw = resolveContextReference(mem[key], key);
+      return { raw, source: "context" };
     }
     if (!config.ignoreContext) {
       log("trace", "resolveRaw: checking context");
@@ -344,37 +356,11 @@ export function scenv<T>(
     const final = validated.data;
     if (wasPrompted) {
       const config = loadConfig();
-      const mode =
-        config.shouldSavePrompt ?? (config.prompt === "never" ? "never" : "ask");
-      if (mode === "never") return final;
-      let doSave: boolean;
-      if (mode === "ask") {
-        const callbacks = getCallbacks();
-        if (typeof callbacks.onAskWhetherToSave !== "function") {
-          throw new Error(
-            `shouldSavePrompt is "ask" but onAskWhetherToSave callback is not set. Configure callbacks via configure({ callbacks: { onAskWhetherToSave: ... } }).`
-          );
-        }
-        doSave = await callbacks.onAskWhetherToSave(name, final);
-      } else {
-        doSave = true; // always: save without asking
+      setInMemoryContext(key, String(final));
+      if (config.saveContextTo) {
+        writeToContext(config.saveContextTo, key, String(final));
+        log("info", `Saved key=${key} to saveContextTo ${config.saveContextTo}`);
       }
-      if (!doSave) return final;
-      const callbacks = getCallbacks();
-      const contextNames = config.context ?? [];
-      let ctxToSave: string;
-      if (config.saveContextTo === "ask") {
-        if (typeof callbacks.onAskContext !== "function") {
-          throw new Error(
-            `saveContextTo is "ask" but onAskContext callback is not set. Configure callbacks via configure({ callbacks: { onAskContext: ... } }).`
-          );
-        }
-        ctxToSave = await callbacks.onAskContext(name, contextNames);
-      } else {
-        ctxToSave = config.saveContextTo ?? contextNames[0] ?? "default";
-      }
-      writeToContext(ctxToSave, key, String(final));
-      log("info", `Saved key=${key} to context ${ctxToSave}`);
     }
     return final;
   }
@@ -399,22 +385,11 @@ export function scenv<T>(
       throw new Error(errMsg);
     }
     const config = loadConfig();
-    let contextName: string | undefined = config.saveContextTo;
-    if (contextName === "ask") {
-      const callbacks = getCallbacks();
-      if (typeof callbacks.onAskContext !== "function") {
-        throw new Error(
-          `saveContextTo is "ask" but onAskContext callback is not set. Configure callbacks via configure({ callbacks: { onAskContext: ... } }).`
-        );
-      }
-      contextName = await callbacks.onAskContext(
-        name,
-        config.context ?? []
-      );
+    setInMemoryContext(key, String(validated.data));
+    if (config.saveContextTo) {
+      writeToContext(config.saveContextTo, key, String(validated.data));
+      log("info", `Saved key=${key} to saveContextTo ${config.saveContextTo}`);
     }
-    if (!contextName) contextName = config.context?.[0] ?? "default";
-    writeToContext(contextName, key, String(validated.data));
-    log("info", `Saved key=${key} to context ${contextName}`);
   }
 
   return { get, safeGet, save };

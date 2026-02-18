@@ -4,12 +4,38 @@ import {
   mkdirSync,
   readdirSync,
   statSync,
+  existsSync,
 } from "node:fs";
-import { join, dirname, isAbsolute } from "node:path";
+import { join, dirname, isAbsolute, sep } from "node:path";
 import { loadConfig } from "./config.js";
 import { log, logConfigLoaded } from "./log.js";
 
 const CONTEXT_SUFFIX = ".context.json";
+
+/** In-memory context: values resolved or saved during this process. Checked before file contexts so .get() on same variable twice does not prompt twice. */
+let inMemoryContext: Record<string, string> = {};
+
+/**
+ * Returns the current in-memory context (key → value). Used during resolution before file contexts.
+ * Modifying the returned object mutates the store.
+ */
+export function getInMemoryContext(): Record<string, string> {
+  return inMemoryContext;
+}
+
+/**
+ * Sets a key-value pair in the in-memory context. Used when saving after prompt or save() when saveContextTo is unset, and always updated when a value is saved so the next get() sees it.
+ */
+export function setInMemoryContext(key: string, value: string): void {
+  inMemoryContext[key] = value;
+}
+
+/**
+ * Clears the in-memory context. Mainly for tests. Call in beforeEach to get a clean slate.
+ */
+export function resetInMemoryContext(): void {
+  inMemoryContext = {};
+}
 
 function discoverContextPathsInternal(
   dir: string,
@@ -104,10 +130,10 @@ export function getContext(
 }
 
 /**
- * Loads and merges context values from the current config. Respects {@link ScenvConfig.context}
- * order and {@link ScenvConfig.ignoreContext}. Each context file is a JSON object of string
- * key-value pairs; later contexts overwrite earlier for the same key. Used during variable
- * resolution (set > env > context > default).
+ * Loads and merges context values from the current config. If {@link ScenvConfig.saveContextTo}
+ * is set, that context (file path or name) is loaded first; then {@link ScenvConfig.context}
+ * order. Respects {@link ScenvConfig.ignoreContext}. Later contexts overwrite earlier for the same key.
+ * Used during variable resolution (set > env > in-memory > merged context > default).
  *
  * @returns A flat record of key → string value. Empty if ignoreContext is true or no context loaded.
  */
@@ -118,6 +144,14 @@ export function getMergedContextValues(): Record<string, string> {
   const root = config.root ?? process.cwd();
   const paths = discoverContextPaths(root);
   const out: Record<string, string> = {};
+  if (config.saveContextTo) {
+    const savePath = resolveSaveContextPath(config.saveContextTo);
+    const saveCtx = getContextAtPath(savePath);
+    for (const [k, v] of Object.entries(saveCtx)) out[k] = v;
+    if (Object.keys(saveCtx).length > 0) {
+      log("debug", `saveContextTo "${config.saveContextTo}" loaded keys=${JSON.stringify(Object.keys(saveCtx))}`);
+    }
+  }
   for (const contextName of config.context ?? []) {
     const filePath = paths.get(contextName);
     if (!filePath) {
@@ -146,14 +180,19 @@ export function getMergedContextValues(): Record<string, string> {
 }
 
 /**
- * Returns the file path used for a context name when saving. If that context was already
- * discovered under config.root, returns its path; otherwise uses config.contextDir (if set)
- * or root as the directory, then contextName.context.json.
+ * Returns the file path used for a context name or path when saving.
+ * - If contextName is path-like (absolute or contains path separator), returns that path with .context.json appended if not already present.
+ * - Otherwise, if that context was already discovered under config.root, returns its path; else uses config.contextDir (if set) or root.
  *
- * @param contextName - Name of the context (e.g. "dev", "prod").
+ * @param contextName - Context name (e.g. "dev", "prod") or file path without suffix (e.g. "/path/to/myfile" → myfile.context.json).
  * @returns Absolute path to the context JSON file.
  */
 export function getContextWritePath(contextName: string): string {
+  if (isAbsolute(contextName) || contextName.includes(sep)) {
+    return contextName.endsWith(CONTEXT_SUFFIX)
+      ? contextName
+      : contextName + CONTEXT_SUFFIX;
+  }
   const config = loadConfig();
   const root = config.root ?? process.cwd();
   const paths = discoverContextPaths(root);
@@ -165,6 +204,36 @@ export function getContextWritePath(contextName: string): string {
       : join(root, config.contextDir)
     : root;
   return join(saveDir, `${contextName}${CONTEXT_SUFFIX}`);
+}
+
+/**
+ * Resolves saveContextTo to an absolute file path. Path-like values get .context.json appended; context names use getContextWritePath.
+ */
+export function resolveSaveContextPath(nameOrPath: string): string {
+  if (isAbsolute(nameOrPath) || nameOrPath.includes(sep)) {
+    return nameOrPath.endsWith(CONTEXT_SUFFIX)
+      ? nameOrPath
+      : nameOrPath + CONTEXT_SUFFIX;
+  }
+  return getContextWritePath(nameOrPath);
+}
+
+/**
+ * Loads key-value pairs from a context file at the given path. Returns empty object if file does not exist or is invalid.
+ */
+export function getContextAtPath(filePath: string): Record<string, string> {
+  if (!existsSync(filePath)) return {};
+  try {
+    const raw = readFileSync(filePath, "utf-8");
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (typeof v === "string") out[k] = v;
+    }
+    return out;
+  } catch {
+    return {};
+  }
 }
 
 /**

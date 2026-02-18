@@ -1,62 +1,40 @@
 # Saving
 
-Scenv can write variable values into context files so they can be resolved in future runs. Saving is controlled by config and optional callbacks.
+Scenv can store variable values so they are available for the rest of the current process and, optionally, for future runs. Saving is controlled by **`saveContextTo`** only; there are no "save?" or "where to save?" prompts.
+
+---
+
+## `saveContextTo`
+
+**`saveContextTo`** is an optional config value (context name or file path, without the `.context.json` suffix):
+
+- **Unset** – Resolved and saved values are stored **in memory** only. They are used for the rest of the current process (e.g. a second `get()` on the same variable does not prompt again), but are not written to disk.
+- **Set** (e.g. `"my-saves"` or `"/path/to/myfile"`) – All saved values are written to that context file. The same context is also **used when resolving** (before prompting), so values are available on the next run and a second `get()` in the same run does not prompt again.
+
+You are never asked whether to save or where to save; behavior is determined entirely by whether `saveContextTo` is set.
 
 ---
 
 ## `variable.save(value?)`
 
-Calling **`variable.save(value?)`** writes the variable's key and value to a context file.
+Calling **`variable.save(value?)`** stores the variable's key and value:
 
-- **Value:** If you pass `value`, that value is validated (if the variable has a validator) and written. Otherwise, the value used is the last resolved value (as if you had just called `get()`), so no extra prompt for the value.
-- **No "save?" prompt:** `save()` does *not* ask "do you want to save?". It saves. The only interactive part is *which context* to save to when that is ambiguous (see below).
+- **Value:** If you pass `value`, that value is validated (if the variable has a validator) and stored. Otherwise, the last resolved value (as if you had just called `get()`) is used.
+- **Where:** If `saveContextTo` is set, the value is written to that context file. In all cases, the value is stored in the in-memory context so the next `get()` sees it without prompting.
 
----
-
-## Which context is written to
-
-The target context is determined by **`saveContextTo`**:
-
-- **String** (e.g. `"my-saves"`) – Save to that context. The file path is the one discovered for that name, or—for a new context—`{contextDir}/{name}.context.json` if **`contextDir`** is set (see [Configuration](CONFIGURATION.md)), otherwise `{root}/{name}.context.json`.
-- **`"ask"`** – Scenv calls the **`onAskContext`** callback so your app can decide (e.g. prompt the user or pick from a list). The callback is **required**: if `saveContextTo` is `"ask"` and `onAskContext` is not set, `save()` throws.
-
-If `saveContextTo` is unset or not `"ask"`, scenv uses the first context in the config context list, or `"default"`.
+`save()` does not ask any questions; it just saves.
 
 ---
 
-## Callbacks
+## Resolution order and in-memory context
 
-Set callbacks when calling **`configure()`**:
+When resolving a variable, scenv looks in this order:
 
-```ts
-configure({
-  callbacks: {
-    onAskContext: async (variableName, contextNames) => {
-      // Return the context name to save to (e.g. from user input or list).
-      return "my-context";
-    },
-    onAskWhetherToSave: async (variableName, value) => {
-      // Only called when shouldSavePrompt is "ask" and the user was just prompted.
-      // Return true to save, false to skip. Where to save is resolved separately (saveContextTo or onAskContext).
-      return true;
-    },
-  },
-});
-```
+1. Set overrides (e.g. `--set key=value`)
+2. Environment variable
+3. **In-memory context** (values from earlier `get()` or `save()` in this process)
+4. **saveContextTo context** (if set) – loaded from file and merged with other context files
+5. Config context list (context files in order)
+6. Default or prompt
 
-- **`onAskContext`** – **Required** when `saveContextTo` is `"ask"`. Used when you call `variable.save()` or when saving after a prompt and the destination is "ask"; your app can prompt for a context name or create a new one. Throws if `saveContextTo` is `"ask"` and this callback is not set.
-- **`onAskWhetherToSave`** – Only called when **`shouldSavePrompt`** is `"ask"` and the user was just prompted. Return `true` to save (then scenv uses `saveContextTo` or calls `onAskContext` if destination is "ask"), or `false` to skip. With `"always"` we save without calling this.
-
----
-
-## shouldSavePrompt
-
-**`shouldSavePrompt`** controls what happens with the value after the user was just prompted for it. When unset, the default is **`ask`** unless **`prompt`** is **`never`**, in which case the default is **`never`**.
-
-| Value | Behavior |
-|-------|----------|
-| `never` | Do not save the value. |
-| `always` | Save the value (no prompt). Destination is `saveContextTo` or `onAskContext` when saveContextTo is "ask". |
-| `ask` | Call `onAskWhetherToSave`; if it returns true, save (using saveContextTo or onAskContext); if false, don't save. |
-
-**`variable.save()`** does not use this; it always saves. The "save after prompt" flow only runs when the user was prompted during `get()` and `shouldSavePrompt` is `always` or `ask`.
+So if you call `get()` on the same variable twice and the first call prompted for a value, the second call uses the in-memory (and file, if `saveContextTo` is set) value and does not prompt again.

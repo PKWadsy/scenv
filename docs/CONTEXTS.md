@@ -77,9 +77,9 @@ for (const [name, path] of paths) {
 
 ## Writing to a context
 
-When you call `variable.save()` or when saving after a prompt (see [Saving](SAVING.md)), scenv writes to a context file. The target context is determined by `saveContextTo`:
+When you call `variable.save()` or when a value is resolved via a prompt (see [Saving](SAVING.md)), scenv stores the value in the in-memory context (so the next `get()` in the same process sees it). If **`saveContextTo`** is set, the value is also written to that context file.
 
-- If it is a string (e.g. `"my-saves"`), that context is used. The file path is the one from discovery, or—for a new context—`{contextDir}/{contextName}.context.json` if **`contextDir`** is set (relative to root or absolute), otherwise `{root}/{contextName}.context.json`.
-- If it is `"ask"`, the `onAskContext` callback is called so your app can ask the user which context to use (or create a new name).
+- **saveContextTo** can be a context name (e.g. `"my-saves"`) or a file path without the `.context.json` suffix. The file path is from discovery for a name, or the given path with `.context.json` appended for a path.
+- For a new context name, the file is created under `{contextDir}` if set (relative to root or absolute), otherwise under `{root}`.
 
 The file is updated by merging the new key-value pair with the existing JSON and writing it back.

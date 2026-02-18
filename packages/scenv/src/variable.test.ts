@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { configure, resetConfig } from "./config.js";
+import { resetInMemoryContext } from "./context.js";
 import { scenv } from "./variable.js";
 import { writeFileSync, mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,6 +11,7 @@ describe("variable", () => {
 
   beforeEach(() => {
     resetConfig();
+    resetInMemoryContext();
     tmpDir = join(tmpdir(), `scenv-var-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     configure({
@@ -91,7 +93,7 @@ describe("variable", () => {
   });
 
   it("get({ prompt: fn }) overrides variable prompt for that call", async () => {
-    configure({ prompt: "always", shouldSavePrompt: "never" });
+    configure({ prompt: "always" });
     const v = scenv("Prompted", {
       key: "prompted_key",
       default: "var-default",
@@ -104,7 +106,7 @@ describe("variable", () => {
   });
 
   it("get({ default, prompt }) applies both overrides for that call", async () => {
-    configure({ prompt: "fallback", shouldSavePrompt: "never" });
+    configure({ prompt: "fallback" });
     const v = scenv("Both", { key: "both_key" });
     const value = await v.get({
       default: "call-default",
@@ -155,7 +157,7 @@ describe("variable", () => {
   });
 
   it("get() uses custom prompt when prompt mode is always", async () => {
-    configure({ prompt: "always", shouldSavePrompt: "never" });
+    configure({ prompt: "always" });
     const v = scenv("Prompted Var", {
       key: "prompted_var",
       default: "default-val",
@@ -170,7 +172,7 @@ describe("variable", () => {
   });
 
   it("get() uses custom prompt when prompt mode fallback and no value", async () => {
-    configure({ prompt: "fallback", shouldSavePrompt: "never" });
+    configure({ prompt: "fallback" });
     const v = scenv("Fallback Var", {
       key: "fallback_var",
       prompt: () => "fallback-typed",
@@ -182,7 +184,6 @@ describe("variable", () => {
   it("get() uses callbacks.defaultPrompt when variable has no prompt option", async () => {
     configure({
       prompt: "fallback",
-      shouldSavePrompt: "never",
       callbacks: {
         defaultPrompt: async (name, defaultVal) => {
           expect(name).toBe("No Var Prompt");
@@ -203,7 +204,6 @@ describe("variable", () => {
     const defaultPromptCalled: string[] = [];
     configure({
       prompt: "fallback",
-      shouldSavePrompt: "never",
       callbacks: {
         defaultPrompt: async (name) => {
           defaultPromptCalled.push(name);
@@ -221,7 +221,7 @@ describe("variable", () => {
   });
 
   it("get() prompts when prompt mode fallback and only default exists (no set/env/context)", async () => {
-    configure({ prompt: "fallback", shouldSavePrompt: "never" });
+    configure({ prompt: "fallback" });
     const v = scenv("Core Server URL", {
       key: "core_server_url",
       env: "CORE_SERVER_URL",
@@ -248,98 +248,82 @@ describe("variable", () => {
     delete process.env.CORE_SERVER_URL;
   });
 
-  it("get() calls onAskWhetherToSave then onAskContext when prompted and shouldSavePrompt is ask", async () => {
+  it("get() saves prompted value to saveContextTo and in-memory when saveContextTo is set", async () => {
     configure({
       prompt: "always",
-      shouldSavePrompt: "ask",
-      saveContextTo: "ask",
-      context: ["ctx1"],
-      callbacks: {
-        onAskWhetherToSave: async (name, value) => {
-          expect(name).toBe("Save Me");
-          expect(value).toBe("saved-value");
-          return true;
-        },
-        onAskContext: async (name, contextNames) => {
-          expect(name).toBe("Save Me");
-          expect(contextNames).toEqual(["ctx1"]);
-          return "savedctx";
-        },
-      },
-    });
-    const v = scenv("Save Me", {
-      key: "save_me",
-      prompt: () => "saved-value",
-    });
-    const value = await v.get();
-    expect(value).toBe("saved-value");
-    const ctxPath = join(tmpDir, "savedctx.context.json");
-    const content = readFileSync(ctxPath, "utf-8");
-    const data = JSON.parse(content);
-    expect(data.save_me).toBe("saved-value");
-  });
-
-  it("get() does not save when onAskWhetherToSave returns false", async () => {
-    configure({
-      prompt: "always",
-      shouldSavePrompt: "ask",
-      context: ["ctx1"],
-      callbacks: {
-        onAskWhetherToSave: async () => false,
-      },
-    });
-    const v = scenv("No Save", { key: "no_save", prompt: () => "x" });
-    const value = await v.get();
-    expect(value).toBe("x");
-    const ctxPath = join(tmpDir, "ctx1.context.json");
-    expect(() => readFileSync(ctxPath, "utf-8")).toThrow();
-  });
-
-  it("get() saves without asking when shouldSavePrompt is always", async () => {
-    let askWhetherToSaveCalled = false;
-    configure({
-      prompt: "always",
-      shouldSavePrompt: "always",
       saveContextTo: "always-ctx",
       context: ["always-ctx"],
-      callbacks: {
-        onAskWhetherToSave: async () => {
-          askWhetherToSaveCalled = true;
-          return false;
-        },
-      },
     });
     const v = scenv("Always Save", { key: "always_save", prompt: () => "auto-saved" });
     const value = await v.get();
     expect(value).toBe("auto-saved");
-    expect(askWhetherToSaveCalled).toBe(false);
     const ctxPath = join(tmpDir, "always-ctx.context.json");
     const content = readFileSync(ctxPath, "utf-8");
     const data = JSON.parse(content);
     expect(data.always_save).toBe("auto-saved");
   });
 
-  it("save() uses onAskContext when saveContextTo is ask", async () => {
-    configure({
-      saveContextTo: "ask",
-      context: ["existing"],
-      callbacks: {
-        onAskContext: async (name, contextNames) => {
-          expect(name).toBe("Ask Context Var");
-          expect(contextNames).toEqual(["existing"]);
-          return "chosen-ctx";
-        },
+  it("get() on same variable twice does not prompt twice (in-memory used)", async () => {
+    configure({ prompt: "fallback", ignoreContext: true });
+    let promptCount = 0;
+    const v = scenv("Once", {
+      key: "once_key",
+      prompt: () => {
+        promptCount++;
+        return "prompted-value";
       },
     });
-    const v = scenv("Ask Context Var", {
-      key: "ask_context_var",
-      default: "val",
+    const a = await v.get();
+    const b = await v.get();
+    expect(a).toBe("prompted-value");
+    expect(b).toBe("prompted-value");
+    expect(promptCount).toBe(1);
+  });
+
+  it("get() on same variable twice uses saveContextTo file when set (no double prompt)", async () => {
+    configure({
+      prompt: "fallback",
+      ignoreContext: false,
+      saveContextTo: "persist",
+      context: ["persist"],
     });
+    let promptCount = 0;
+    const v = scenv("Persist Var", {
+      key: "persist_var",
+      prompt: () => {
+        promptCount++;
+        return "from-prompt";
+      },
+    });
+    const first = await v.get();
+    expect(first).toBe("from-prompt");
+    expect(promptCount).toBe(1);
+    const second = await v.get();
+    expect(second).toBe("from-prompt");
+    expect(promptCount).toBe(1);
+    const ctxPath = join(tmpDir, "persist.context.json");
+    const data = JSON.parse(readFileSync(ctxPath, "utf-8"));
+    expect(data.persist_var).toBe("from-prompt");
+  });
+
+  it("saveContextTo as file path (without .context.json) writes to that path", async () => {
+    const customPath = join(tmpDir, "custom-save");
+    configure({ saveContextTo: customPath, context: [] });
+    const v = scenv("Path Var", { key: "path_var", default: "path-value" });
     await v.save();
-    const ctxPath = join(tmpDir, "chosen-ctx.context.json");
-    const content = readFileSync(ctxPath, "utf-8");
+    const content = readFileSync(customPath + ".context.json", "utf-8");
     const data = JSON.parse(content);
-    expect(data.ask_context_var).toBe("val");
+    expect(data.path_var).toBe("path-value");
+  });
+
+  it("save() without saveContextTo only updates in-memory (no file)", async () => {
+    configure({ context: [], ignoreContext: true });
+    const v = scenv("Memory Only", { key: "mem_key", default: "mem-value" });
+    await v.save();
+    const ctxPath = join(tmpDir, "default.context.json");
+    expect(() => readFileSync(ctxPath, "utf-8")).toThrow();
+    const again = await v.get();
+    expect(again).toBe("mem-value");
   });
 
   it("get() uses config applied after variable is created", async () => {
@@ -353,7 +337,7 @@ describe("variable", () => {
     expect(await v.get()).toBe("variable-default");
   });
 
-  it("save() uses first context when saveContextTo is set to a name (not ask)", async () => {
+  it("save() uses saveContextTo when set to a context name", async () => {
     configure({ saveContextTo: "first-ctx", context: ["first-ctx"] });
     const v = scenv("No Callback", { key: "no_callback", default: "v" });
     await v.save();
@@ -434,7 +418,6 @@ describe("variable", () => {
       );
       configure({
         prompt: "always",
-        shouldSavePrompt: "never",
         root: tmpDir,
       });
       const v = scenv("API URL", {

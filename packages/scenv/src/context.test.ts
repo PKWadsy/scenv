@@ -6,6 +6,11 @@ import {
   getContext,
   getContextWritePath,
   writeToContext,
+  getInMemoryContext,
+  setInMemoryContext,
+  resetInMemoryContext,
+  getContextAtPath,
+  resolveSaveContextPath,
 } from "./context.js";
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -142,5 +147,51 @@ describe("context", () => {
   it("getContext returns {} when context not found", () => {
     const values = getContext("nonexistent", tmpDir);
     expect(values).toEqual({});
+  });
+
+  it("getInMemoryContext and setInMemoryContext and resetInMemoryContext", () => {
+    expect(getInMemoryContext()).toEqual({});
+    setInMemoryContext("k1", "v1");
+    expect(getInMemoryContext().k1).toBe("v1");
+    setInMemoryContext("k2", "v2");
+    expect(getInMemoryContext().k2).toBe("v2");
+    resetInMemoryContext();
+    expect(getInMemoryContext()).toEqual({});
+  });
+
+  it("getMergedContextValues includes saveContextTo when set", () => {
+    const savePath = join(tmpDir, "save-ctx.context.json");
+    writeFileSync(savePath, JSON.stringify({ from_save: "saved-value" }));
+    configure({ root: tmpDir, context: ["a"], saveContextTo: join(tmpDir, "save-ctx") });
+    writeFileSync(
+      join(tmpDir, "a.context.json"),
+      JSON.stringify({ from_save: "from-a", other: "from-a" })
+    );
+    const values = getMergedContextValues();
+    expect(values.from_save).toBe("from-a");
+    expect(values.other).toBe("from-a");
+    resetConfig();
+    configure({ root: tmpDir, context: [], saveContextTo: join(tmpDir, "save-ctx") });
+    const values2 = getMergedContextValues();
+    expect(values2.from_save).toBe("saved-value");
+    resetConfig();
+  });
+
+  it("getContextWritePath with path-like returns path with suffix", () => {
+    const pathLike = join(tmpDir, "mydir", "myfile");
+    const p = getContextWritePath(pathLike);
+    expect(p).toBe(pathLike + ".context.json");
+  });
+
+  it("getContextAtPath loads from file", () => {
+    const fp = join(tmpDir, "at-path.context.json");
+    writeFileSync(fp, JSON.stringify({ x: "y" }));
+    const values = getContextAtPath(fp);
+    expect(values.x).toBe("y");
+  });
+
+  it("resolveSaveContextPath with path-like appends suffix", () => {
+    const pathLike = join(tmpDir, "resolved");
+    expect(resolveSaveContextPath(pathLike)).toBe(pathLike + ".context.json");
   });
 });

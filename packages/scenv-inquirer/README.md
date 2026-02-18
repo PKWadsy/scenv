@@ -1,8 +1,8 @@
 # scenv-inquirer
 
-Inquirer-based prompts for [scenv](https://www.npmjs.com/package/scenv): variable prompts and save/context callbacks.
+Inquirer-based prompts for [scenv](https://www.npmjs.com/package/scenv): variable prompts (and optional default prompt callback).
 
-Use with scenv when you want interactive prompts for variable values and for "save to context?" / "which context?" flows.
+Use with scenv when you want interactive prompts for variable values. Saving is controlled by scenv's `saveContextTo` config (path or context name); there are no "save?" or "which context?" callbacks in scenv.
 
 ## Install
 
@@ -45,11 +45,7 @@ configure({ callbacks: { defaultPrompt: prompt() } });
 
 Variable-level `prompt` overrides this default.
 
-### Save and context callbacks
-
-`askWhetherToSave()` and `askContext()` return functions for scenv's `onAskWhetherToSave` and `onAskContext` callbacks. Use them when `shouldSavePrompt` is `ask` or when `saveContextTo: "ask"`.
-
-**`callbacks()`** wires all of the above in one go:
+**`callbacks()`** returns an object you can pass to `configure()` so all variables use inquirer when they need a value:
 
 ```ts
 import { configure } from "scenv";
@@ -60,20 +56,14 @@ configure(callbacks());
 configure({ ...yourConfig, ...callbacks() });
 ```
 
-This sets:
-
-- **defaultPrompt** – inquirer for variable values when no value is resolved
-- **onAskWhetherToSave** – "Save '{name}' for next time?" (y/n). Only used when `shouldSavePrompt` is "ask".
-- **onAskContext** – "Save to which context?" (list or new). Used when `saveContextTo` is "ask" or when saving after prompt and destination is "ask".
+This sets **defaultPrompt** so variable values are prompted via inquirer when no value is resolved from set/env/context.
 
 ## API
 
 | Export | Description |
 |--------|-------------|
 | `prompt()` | Returns `(name, defaultValue) => Promise<T>` for use as variable `prompt` or `callbacks.defaultPrompt`. |
-| `askWhetherToSave()` | Returns `onAskWhetherToSave`: asks whether to save (y/n). Where to save is handled by `saveContextTo` or `onAskContext`. |
-| `askContext()` | Returns `onAskContext`: asks which context to save to. |
-| `callbacks()` | Returns `{ callbacks: { defaultPrompt, onAskWhetherToSave, onAskContext } }`. |
+| `callbacks()` | Returns `{ callbacks: { defaultPrompt } }` for use with `configure()`. |
 
 ## License
 

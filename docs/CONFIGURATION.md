@@ -24,8 +24,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 | `ignoreEnv` | `boolean` | If `true`, environment variables are not used during resolution. |
 | `ignoreContext` | `boolean` | If `true`, context files are not used during resolution. |
 | `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. Values can use context references: `@context` or `@context:key` (see [Resolution](RESOLUTION.md#context-references-contextkey)). |
-| `shouldSavePrompt` | `"always"` \| `"never"` \| `"ask"` | After a prompt: `never` = don't save, `always` = save without asking, `ask` = call onAskWhetherToSave (save if true). See [Saving](SAVING.md). |
-| `saveContextTo` | `"ask"` \| `string` | Where to save when writing a variable: a context name, or `"ask"` to use the callback. |
+| `saveContextTo` | `string` | Optional. Path or context name (without `.context.json`) where to save resolved values. If set, all saves go here and this context is used when resolving (before prompting). If unset, values are saved to in-memory only. See [Saving](SAVING.md). |
 | `contextDir` | `string` | Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. |
 | `root` | `string` | Directory used as root for config and context search (optional). |
 | `logLevel` | `"none"` \| `"trace"` \| `"debug"` \| `"info"` \| `"warn"` \| `"error"` | Logging level; default is `none` (no logs). Logs go to stderr. |
@@ -37,8 +36,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
   "context": ["dev", "prod"],
   "prompt": "fallback",
   "ignoreEnv": false,
-  "shouldSavePrompt": "ask",
-  "saveContextTo": "ask"
+  "saveContextTo": "dev"
 }
 ```
 
@@ -55,8 +53,7 @@ Any of the config keys above can be set via environment variables. The mapping i
 | `SCENV_PROMPT` | `prompt` | `always`, `never`, `fallback`, `no-env`. |
 | `SCENV_IGNORE_ENV` | `ignoreEnv` | `1`, `true`, or `yes` → true. |
 | `SCENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
-| `SCENV_SAVE_PROMPT` | `shouldSavePrompt` | `always`, `never`, `ask`. |
-| `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Context name or `ask`. |
+| `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Path or context name (without `.context.json`). |
 | `SCENV_CONTEXT_DIR` | `contextDir` | Directory path (relative to root or absolute). |
 | `SCENV_LOG_LEVEL` | `logLevel` | `none`, `trace`, `debug`, `info`, `warn`, `error`. |
 
@@ -87,9 +84,9 @@ configure({
   context: ["prod"],
   prompt: "never",
   set: { api_url: "https://custom.example.com" },
+  saveContextTo: "prod",
   callbacks: {
-    onAskContext: async (name, contextNames) => { /* ... */ },
-    onAskWhetherToSave: async (name, value) => { /* ... */ },
+    defaultPrompt: async (name, defaultValue) => { /* ... */ },
   },
 });
 ```

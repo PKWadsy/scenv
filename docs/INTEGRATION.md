@@ -77,7 +77,7 @@ configure(callbacks());
 configure({ ...yourConfig, ...callbacks() });
 ```
 
-Variable-level `prompt` overrides `defaultPrompt`. Then `SCENV_SAVE_PROMPT=ask` and `saveContextTo: "ask"` prompt interactively. You can also wire a single callback: `configure({ callbacks: { defaultPrompt: prompt() } })` or use `askSaveAfterPrompt()` / `askContext()`.
+Variable-level `prompt` overrides `defaultPrompt`. Set `saveContextTo` to a path or context name to persist values to a file; otherwise values are kept in memory for the current process.
 
 ---
 

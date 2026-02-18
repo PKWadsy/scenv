@@ -1,10 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import {
-  defaultPrompt as defaultPromptFn,
-  defaultAskWhetherToSave,
-  defaultAskContext,
-} from "./prompt-default.js";
+import { defaultPrompt as defaultPromptFn } from "./prompt-default.js";
 
 /**
  * When to prompt the user for a variable value during resolution.
@@ -14,14 +10,6 @@ import {
  * - `"no-env"` – Prompt when the env var is not set (even if context has a value).
  */
 export type PromptMode = "always" | "never" | "fallback" | "no-env";
-
-/**
- * What to do with the value after the user was just prompted for it.
- * - `"never"` – Do not save; discard for next time.
- * - `"always"` – Save it (no prompt). Use saveContextTo or onAskContext only to pick where.
- * - `"ask"` – Call {@link ScenvCallbacks.onAskWhetherToSave}; if true save, if false don't save.
- */
-export type SavePromptMode = "always" | "never" | "ask";
 
 /**
  * Valid log levels. Use with {@link ScenvConfig.logLevel}.
@@ -50,10 +38,8 @@ export interface ScenvConfig {
   ignoreContext?: boolean;
   /** Override values by key (CLI: `--set key=value`). Takes precedence over env and context. */
   set?: Record<string, string>;
-  /** After a prompt: "never" = don't save, "always" = save without asking, "ask" = call onAskWhetherToSave (then save if true). */
-  shouldSavePrompt?: SavePromptMode;
-  /** Target context for saving: a context name, or `"ask"` to use {@link ScenvCallbacks.onAskContext}. */
-  saveContextTo?: "ask" | string;
+  /** Optional path or context name (without .context.json) where to save resolved values. If set, all saves go here and this context is used before prompting. If unset, values are saved to an in-memory context only (same process). */
+  saveContextTo?: string;
   /** Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. */
   contextDir?: string;
   /** Root directory for config file search and context discovery. Default is cwd or the directory containing scenv.config.json. */
@@ -70,7 +56,6 @@ const envKeyMap: Record<string, keyof ScenvConfig> = {
   SCENV_PROMPT: "prompt",
   SCENV_IGNORE_ENV: "ignoreEnv",
   SCENV_IGNORE_CONTEXT: "ignoreContext",
-  SCENV_SAVE_PROMPT: "shouldSavePrompt",
   SCENV_SAVE_CONTEXT_TO: "saveContextTo",
   SCENV_CONTEXT_DIR: "contextDir",
   SCENV_LOG_LEVEL: "logLevel",
@@ -90,37 +75,22 @@ export type DefaultPromptFn = (
 ) => unknown | Promise<unknown>;
 
 /**
- * Callbacks for interactive behaviour. All have built-in readline defaults when not set.
- * Pass to {@link configure} via `configure({ callbacks: { ... } })`.
+ * Callbacks for interactive behaviour. Pass to {@link configure} via `configure({ callbacks: { ... } })`.
  */
 export interface ScenvCallbacks {
   /** Used when a variable does not define its own `prompt`. Variable-level `prompt` overrides this. */
   defaultPrompt?: DefaultPromptFn;
-  /** Called only when {@link ScenvConfig.shouldSavePrompt} is "ask" and the user was just prompted. Return true to save, false to skip. (With "always", we save without calling this.) */
-  onAskWhetherToSave?: (
-    name: string,
-    value: unknown
-  ) => Promise<boolean>;
-  /** Called when the save destination is ambiguous: saveContextTo is "ask", or after a prompt when the user said yes and saveContextTo is "ask". Return the context name to write to. */
-  onAskContext?: (
-    name: string,
-    contextNames: string[]
-  ) => Promise<string>;
 }
 let programmaticCallbacks: ScenvCallbacks = {};
 
 /**
- * Returns the current callbacks (with built-in defaults merged in for any unset callback).
- * Useful for inspection or to pass a subset to another layer. Each call returns a new object.
+ * Returns the current callbacks (with built-in default for defaultPrompt when not set).
  *
- * @returns Copy of the effective callbacks: defaultPrompt, onAskWhetherToSave, onAskContext (always defined).
+ * @returns Copy of the effective callbacks.
  */
 export function getCallbacks(): ScenvCallbacks {
   return {
     defaultPrompt: programmaticCallbacks.defaultPrompt ?? defaultPromptFn,
-    onAskWhetherToSave:
-      programmaticCallbacks.onAskWhetherToSave ?? defaultAskWhetherToSave,
-    onAskContext: programmaticCallbacks.onAskContext ?? defaultAskContext,
   };
 }
 
@@ -155,20 +125,12 @@ function configFromEnv(): Partial<ScenvConfig> {
     } else if (configKey === "ignoreEnv" || configKey === "ignoreContext") {
       (out as Record<string, boolean>)[configKey] =
         val === "1" || val === "true" || val.toLowerCase() === "yes";
-    } else if (configKey === "prompt" || configKey === "shouldSavePrompt") {
+    } else if (configKey === "prompt") {
       const v = val.toLowerCase();
-      if (
-        configKey === "prompt" &&
-        (v === "always" || v === "never" || v === "fallback" || v === "no-env")
-      )
+      if (v === "always" || v === "never" || v === "fallback" || v === "no-env")
         (out as Record<string, PromptMode>)[configKey] = v as PromptMode;
-      if (
-        configKey === "shouldSavePrompt" &&
-        (v === "always" || v === "never" || v === "ask")
-      )
-        (out as Record<string, SavePromptMode>)[configKey] = v as SavePromptMode;
     } else if (configKey === "saveContextTo") {
-      out.saveContextTo = val;
+      out.saveContextTo = val as string;
     } else if (configKey === "contextDir") {
       out.contextDir = val;
     } else if (configKey === "logLevel") {
@@ -215,11 +177,6 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
       out.ignoreContext = parsed.ignoreContext;
     if (parsed.set && typeof parsed.set === "object" && !Array.isArray(parsed.set))
       out.set = parsed.set as Record<string, string>;
-    if (
-      typeof (parsed.shouldSavePrompt ?? parsed.savePrompt) === "string" &&
-      ["always", "never", "ask"].includes((parsed.shouldSavePrompt ?? parsed.savePrompt) as string)
-    )
-      out.shouldSavePrompt = (parsed.shouldSavePrompt ?? parsed.savePrompt) as SavePromptMode;
     if (typeof parsed.saveContextTo === "string")
       out.saveContextTo = parsed.saveContextTo;
     if (typeof parsed.contextDir === "string") out.contextDir = parsed.contextDir;

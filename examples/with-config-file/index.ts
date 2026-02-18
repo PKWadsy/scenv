@@ -17,7 +17,6 @@ async function main() {
   console.log("  context:", config.context);
   console.log("  prompt:", config.prompt);
   console.log("  ignoreEnv:", config.ignoreEnv);
-  console.log("  shouldSavePrompt:", config.shouldSavePrompt);
   console.log("  saveContextTo:", config.saveContextTo);
   console.log("");
 
