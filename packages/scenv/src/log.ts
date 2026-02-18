@@ -39,7 +39,7 @@ export function resetLogState(): void {
  * Internal: logs config loaded once per process when log level is info or higher.
  * @internal
  */
-export function logConfigLoaded(config: Pick<ScenvConfig, "root" | "contexts">): void {
+export function logConfigLoaded(config: Pick<ScenvConfig, "root" | "context">): void {
   if (configLoadedLogged) return;
   if (getLevelNum() < LEVEL_NUM.info) return;
   configLoadedLogged = true;
@@ -47,7 +47,7 @@ export function logConfigLoaded(config: Pick<ScenvConfig, "root" | "contexts">):
     "info",
     "config loaded",
     "root=" + (config.root ?? "(cwd)"),
-    "contexts=" + JSON.stringify(config.contexts ?? [])
+    "context=" + JSON.stringify(config.context ?? [])
   );
 }
 

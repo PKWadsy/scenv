@@ -132,7 +132,7 @@ export interface ScenvVariable<T> {
  * get() first looks for a raw value in this order, stopping at the first found:
  * - Set overrides from config (e.g. from --set key=value or configure({ set: { key: "value" } }))
  * - Environment variable (e.g. API_URL for key "api_url")
- * - Context files (merged key-value from the contexts in config, e.g. dev.context.json)
+ * - Context files (merged key-value from the context list in config, e.g. dev.context.json)
  *
  * If config says to prompt (see prompt mode in config: "always", "fallback", "no-env"), the prompt callback
  * may run. When it runs, it receives the variable name and a suggested value (the raw value if any, otherwise
@@ -325,7 +325,7 @@ export function scenv<T>(
       }
       if (!doSave) return final;
       const callbacks = getCallbacks();
-      const contextNames = config.contexts ?? [];
+      const contextNames = config.context ?? [];
       let ctxToSave: string;
       if (config.saveContextTo === "ask") {
         if (typeof callbacks.onAskContext !== "function") {
@@ -373,10 +373,10 @@ export function scenv<T>(
       }
       contextName = await callbacks.onAskContext(
         name,
-        config.contexts ?? []
+        config.context ?? []
       );
     }
-    if (!contextName) contextName = config.contexts?.[0] ?? "default";
+    if (!contextName) contextName = config.context?.[0] ?? "default";
     writeToContext(contextName, key, String(validated.data));
     log("info", `Saved key=${key} to context ${contextName}`);
   }

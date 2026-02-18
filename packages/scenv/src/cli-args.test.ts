@@ -4,12 +4,12 @@ import { parseScenvArgs } from "./cli-args.js";
 describe("parseScenvArgs", () => {
   it("parses --context", () => {
     const config = parseScenvArgs(["--context", "prod,dev"]);
-    expect(config.contexts).toEqual(["prod", "dev"]);
+    expect(config.context).toEqual(["prod", "dev"]);
   });
 
   it("parses --add-context", () => {
     const config = parseScenvArgs(["--add-context", "staging"]);
-    expect(config.addContexts).toEqual(["staging"]);
+    expect(config.addContext).toEqual(["staging"]);
   });
 
   it("parses --prompt", () => {
@@ -52,6 +52,11 @@ describe("parseScenvArgs", () => {
     ]);
     expect(config.shouldSavePrompt).toBe("ask");
     expect(config.saveContextTo).toBe("prod");
+  });
+
+  it("parses --context-dir", () => {
+    const config = parseScenvArgs(["--context-dir", "envs"]);
+    expect(config.contextDir).toBe("envs");
   });
 
   it("returns empty partial for empty argv", () => {

@@ -14,7 +14,7 @@ describe("variable", () => {
     mkdirSync(tmpDir, { recursive: true });
     configure({
       root: tmpDir,
-      contexts: [],
+      context: [],
       prompt: "never",
       ignoreEnv: true,
       ignoreContext: true,
@@ -57,7 +57,7 @@ describe("variable", () => {
       ctxPath,
       JSON.stringify({ core_server_url: "https://ctx.example.com" })
     );
-    configure({ ignoreContext: false, contexts: ["prod"] });
+    configure({ ignoreContext: false, context: ["prod"] });
     const v = scenv("Core Server URL", { default: "localhost:7000" });
     const value = await v.get();
     expect(value).toBe("https://ctx.example.com");
@@ -145,7 +145,7 @@ describe("variable", () => {
   });
 
   it("save() writes to context file", async () => {
-    configure({ saveContextTo: "mysave", contexts: ["mysave"] });
+    configure({ saveContextTo: "mysave", context: ["mysave"] });
     const v = scenv("Saved Key", { key: "saved_key", default: "saved-value" });
     await v.save();
     const ctxPath = join(tmpDir, "mysave.context.json");
@@ -253,7 +253,7 @@ describe("variable", () => {
       prompt: "always",
       shouldSavePrompt: "ask",
       saveContextTo: "ask",
-      contexts: ["ctx1"],
+      context: ["ctx1"],
       callbacks: {
         onAskWhetherToSave: async (name, value) => {
           expect(name).toBe("Save Me");
@@ -283,7 +283,7 @@ describe("variable", () => {
     configure({
       prompt: "always",
       shouldSavePrompt: "ask",
-      contexts: ["ctx1"],
+      context: ["ctx1"],
       callbacks: {
         onAskWhetherToSave: async () => false,
       },
@@ -301,7 +301,7 @@ describe("variable", () => {
       prompt: "always",
       shouldSavePrompt: "always",
       saveContextTo: "always-ctx",
-      contexts: ["always-ctx"],
+      context: ["always-ctx"],
       callbacks: {
         onAskWhetherToSave: async () => {
           askWhetherToSaveCalled = true;
@@ -322,7 +322,7 @@ describe("variable", () => {
   it("save() uses onAskContext when saveContextTo is ask", async () => {
     configure({
       saveContextTo: "ask",
-      contexts: ["existing"],
+      context: ["existing"],
       callbacks: {
         onAskContext: async (name, contextNames) => {
           expect(name).toBe("Ask Context Var");
@@ -354,7 +354,7 @@ describe("variable", () => {
   });
 
   it("save() uses first context when saveContextTo is set to a name (not ask)", async () => {
-    configure({ saveContextTo: "first-ctx", contexts: ["first-ctx"] });
+    configure({ saveContextTo: "first-ctx", context: ["first-ctx"] });
     const v = scenv("No Callback", { key: "no_callback", default: "v" });
     await v.save();
     const ctxPath = join(tmpDir, "first-ctx.context.json");
@@ -405,7 +405,7 @@ describe("variable", () => {
       );
       configure({
         ignoreContext: false,
-        contexts: ["dev"],
+        context: ["dev"],
         root: tmpDir,
       });
       const v = scenv("API URL", { key: "api_url", default: "http://localhost" });

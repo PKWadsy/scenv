@@ -6,14 +6,15 @@ import { LOG_LEVELS, type LogLevel } from "./config.js";
  * Typical use: `configure(parseScenvArgs(process.argv.slice(2)))`. Unrecognized flags are ignored.
  *
  * Supported flags:
- * - `--context a,b,c` – Set contexts (replace).
- * - `--add-context x,y` – Add contexts.
+ * - `--context a,b,c` – Set context list (replace).
+ * - `--add-context x,y` – Add context names.
  * - `--prompt always|never|fallback|no-env` – Prompt mode.
  * - `--ignore-env` – Set ignoreEnv to true.
  * - `--ignore-context` – Set ignoreContext to true.
  * - `--set key=value` or `--set=key=value` – Add to set overrides (multiple allowed).
  * - `--save-prompt always|never|ask` – shouldSavePrompt.
  * - `--save-context-to name` – saveContextTo.
+ * - `--context-dir path` – contextDir (directory to save context files to by default).
  * - `--log-level level`, `--log level`, `--log=level` – logLevel.
  *
  * @param argv - Array of CLI arguments (e.g. process.argv.slice(2)).
@@ -25,9 +26,9 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
   while (i < argv.length) {
     const arg = argv[i];
     if (arg === "--context" && argv[i + 1] !== undefined) {
-      config.contexts = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
+      config.context = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
     } else if (arg === "--add-context" && argv[i + 1] !== undefined) {
-      config.addContexts = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
+      config.addContext = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
     } else if (arg === "--prompt" && argv[i + 1] !== undefined) {
       const v = argv[++i].toLowerCase();
       if (["always", "never", "fallback", "no-env"].includes(v)) {
@@ -51,6 +52,8 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
       }
     } else if (arg === "--save-context-to" && argv[i + 1] !== undefined) {
       config.saveContextTo = argv[++i];
+    } else if (arg === "--context-dir" && argv[i + 1] !== undefined) {
+      config.contextDir = argv[++i];
     } else if ((arg === "--log-level" || arg === "--log") && argv[i + 1] !== undefined) {
       const v = argv[++i].toLowerCase() as LogLevel;
       if (LOG_LEVELS.includes(v)) {

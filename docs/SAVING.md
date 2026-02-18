@@ -17,7 +17,7 @@ Calling **`variable.save(value?)`** writes the variable's key and value to a con
 
 The target context is determined by **`saveContextTo`**:
 
-- **String** (e.g. `"my-saves"`) – Save to that context. The file path is the one discovered for that name, or `{root}/{name}.context.json` if the context is new.
+- **String** (e.g. `"my-saves"`) – Save to that context. The file path is the one discovered for that name, or—for a new context—`{contextDir}/{name}.context.json` if **`contextDir`** is set (see [Configuration](CONFIGURATION.md)), otherwise `{root}/{name}.context.json`.
 - **`"ask"`** – Scenv calls the **`onAskContext`** callback so your app can decide (e.g. prompt the user or pick from a list). The callback is **required**: if `saveContextTo` is `"ask"` and `onAskContext` is not set, `save()` throws.
 
 If `saveContextTo` is unset or not `"ask"`, scenv uses the first context in the config context list, or `"default"`.

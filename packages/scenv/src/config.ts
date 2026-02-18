@@ -39,9 +39,9 @@ export type LogLevel = (typeof LOG_LEVELS)[number];
  */
 export interface ScenvConfig {
   /** Replace the context list entirely (CLI: `--context a,b,c`). Loaded in order; later overwrites earlier for same key. */
-  contexts?: string[];
-  /** Merge these context names with existing (CLI: `--add-context a,b,c`). Ignored if `contexts` is set in the same layer. */
-  addContexts?: string[];
+  context?: string[];
+  /** Merge these context names with existing (CLI: `--add-context a,b,c`). Ignored if `context` is set in the same layer. */
+  addContext?: string[];
   /** When to prompt for a variable value. See {@link PromptMode}. Default is `"fallback"`. */
   prompt?: PromptMode;
   /** If true, environment variables are not used during resolution. */
@@ -54,6 +54,8 @@ export interface ScenvConfig {
   shouldSavePrompt?: SavePromptMode;
   /** Target context for saving: a context name, or `"ask"` to use {@link ScenvCallbacks.onAskContext}. */
   saveContextTo?: "ask" | string;
+  /** Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. */
+  contextDir?: string;
   /** Root directory for config file search and context discovery. Default is cwd or the directory containing scenv.config.json. */
   root?: string;
   /** Logging level. Default is `"none"`. Messages go to stderr. */
@@ -63,13 +65,14 @@ export interface ScenvConfig {
 const CONFIG_FILENAME = "scenv.config.json";
 
 const envKeyMap: Record<string, keyof ScenvConfig> = {
-  SCENV_CONTEXT: "contexts",
-  SCENV_ADD_CONTEXTS: "addContexts",
+  SCENV_CONTEXT: "context",
+  SCENV_ADD_CONTEXT: "addContext",
   SCENV_PROMPT: "prompt",
   SCENV_IGNORE_ENV: "ignoreEnv",
   SCENV_IGNORE_CONTEXT: "ignoreContext",
   SCENV_SAVE_PROMPT: "shouldSavePrompt",
   SCENV_SAVE_CONTEXT_TO: "saveContextTo",
+  SCENV_CONTEXT_DIR: "contextDir",
   SCENV_LOG_LEVEL: "logLevel",
 };
 
@@ -144,7 +147,7 @@ function configFromEnv(): Partial<ScenvConfig> {
   for (const [envKey, configKey] of Object.entries(envKeyMap)) {
     const val = process.env[envKey];
     if (val === undefined || val === "") continue;
-    if (configKey === "contexts" || configKey === "addContexts") {
+    if (configKey === "context" || configKey === "addContext") {
       (out as Record<string, string[] | undefined>)[configKey] = val
         .split(",")
         .map((s: string) => s.trim())
@@ -166,6 +169,8 @@ function configFromEnv(): Partial<ScenvConfig> {
         (out as Record<string, SavePromptMode>)[configKey] = v as SavePromptMode;
     } else if (configKey === "saveContextTo") {
       out.saveContextTo = val;
+    } else if (configKey === "contextDir") {
+      out.contextDir = val;
     } else if (configKey === "logLevel") {
       const v = val.toLowerCase();
       if (LOG_LEVELS.includes(v as LogLevel)) out.logLevel = v as LogLevel;
@@ -184,12 +189,20 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
     const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const out: Partial<ScenvConfig> = {};
-    if (Array.isArray(parsed.contexts))
-      out.contexts = parsed.contexts.filter(
+    if (Array.isArray(parsed.context))
+      out.context = parsed.context.filter(
         (x): x is string => typeof x === "string"
       );
-    if (Array.isArray(parsed.addContexts))
-      out.addContexts = parsed.addContexts.filter(
+    else if (Array.isArray(parsed.contexts))
+      out.context = parsed.contexts.filter(
+        (x): x is string => typeof x === "string"
+      );
+    if (Array.isArray(parsed.addContext))
+      out.addContext = parsed.addContext.filter(
+        (x): x is string => typeof x === "string"
+      );
+    else if (Array.isArray(parsed.addContexts))
+      out.addContext = parsed.addContexts.filter(
         (x): x is string => typeof x === "string"
       );
     if (
@@ -209,6 +222,8 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
       out.shouldSavePrompt = (parsed.shouldSavePrompt ?? parsed.savePrompt) as SavePromptMode;
     if (typeof parsed.saveContextTo === "string")
       out.saveContextTo = parsed.saveContextTo;
+    if (typeof parsed.contextDir === "string") out.contextDir = parsed.contextDir;
+    else if (typeof parsed.contextsDir === "string") out.contextDir = parsed.contextsDir;
     if (typeof parsed.root === "string") out.root = parsed.root;
     if (
       typeof parsed.logLevel === "string" &&
@@ -232,18 +247,18 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
 }
 
 /**
- * Merge context lists: replace (contexts) wins over add (addContexts). Precedence: programmatic > env > file.
+ * Merge context lists: replace (context) wins over add (addContext). Precedence: programmatic > env > file.
  */
 function mergeContexts(
   fileConfig: Partial<ScenvConfig>,
   envConfig: Partial<ScenvConfig>,
   progConfig: Partial<ScenvConfig>
 ): string[] {
-  const fromFile = fileConfig.contexts ?? fileConfig.addContexts ?? [];
-  const fromEnvAdd = envConfig.addContexts ?? [];
-  const fromEnvReplace = envConfig.contexts;
-  const fromProgAdd = progConfig.addContexts ?? [];
-  const fromProgReplace = progConfig.contexts;
+  const fromFile = fileConfig.context ?? fileConfig.addContext ?? [];
+  const fromEnvAdd = envConfig.addContext ?? [];
+  const fromEnvReplace = envConfig.context;
+  const fromProgAdd = progConfig.addContext ?? [];
+  const fromProgReplace = progConfig.context;
 
   const replace = fromProgReplace ?? fromEnvReplace;
   if (replace !== undefined) return replace;
@@ -265,7 +280,7 @@ function mergeContexts(
  * Use this to read the effective config (e.g. for logging or conditional logic).
  *
  * @param root - Optional directory to start searching for scenv.config.json. If omitted, uses programmatic config.root or process.cwd().
- * @returns The merged {@link ScenvConfig} with at least `root` and `contexts` defined.
+ * @returns The merged {@link ScenvConfig} with at least `root` and `context` defined.
  */
 export function loadConfig(root?: string): ScenvConfig {
   const startDir =
@@ -280,8 +295,8 @@ export function loadConfig(root?: string): ScenvConfig {
     ...programmaticConfig,
   };
 
-  merged.contexts = mergeContexts(fileConfig, envConfig, programmaticConfig);
-  delete (merged as Partial<ScenvConfig>).addContexts;
+  merged.context = mergeContexts(fileConfig, envConfig, programmaticConfig);
+  delete (merged as Partial<ScenvConfig>).addContext;
 
   if (configDir && !merged.root) merged.root = configDir;
   else if (!merged.root) merged.root = startDir;

@@ -27,7 +27,7 @@ Creates a scenv variable.
 Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file. You can call `configure()` multiple times; each call is **merged (shallow)** with the previous programmatic config and callbacks—later values overwrite earlier for the same key; objects like `set` and `callbacks` are replaced, not deep-merged.
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
-  - Config keys: `contexts`, `addContexts`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `shouldSavePrompt`, `saveContextTo`, `root`, `logLevel`.
+  - Config keys: `context`, `addContext`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `shouldSavePrompt`, `saveContextTo`, `contextDir`, `root`, `logLevel`.
   - **callbacks**: `{ defaultPrompt?, onAskWhetherToSave?, onAskContext? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). See [Saving](SAVING.md) for the others.
 
 ---
@@ -38,7 +38,7 @@ Returns the fully merged config.
 
 - **root** (string, optional) – Start directory when searching for `scenv.config.json`. If omitted, uses programmatic `root` or `process.cwd()`.
 
-**Returns:** `ScenvConfig` with at least `root`, `contexts` (array), and the rest of the config keys.
+**Returns:** `ScenvConfig` with at least `root`, `context` (array), and the rest of the config keys.
 
 ---
 
@@ -66,8 +66,8 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 
 **Supported flags:**
 
-- `--context a,b,c` – Set contexts (replace).
-- `--add-context a,b` – Add contexts.
+- `--context a,b,c` – Set context list (replace).
+- `--add-context a,b` – Add context names.
 - `--prompt always|never|fallback|no-env`
 - `--ignore-env`
 - `--ignore-context`
@@ -75,6 +75,7 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 - `--set=key=value`
 - `--save-prompt always|never|ask`
 - `--save-context-to name`
+- `--context-dir path` – Directory to save context files to by default.
 - `--log-level level` / `--log level` / `--log=level` – Log level: `none` (default), `trace`, `debug`, `info`, `warn`, `error`.
 
 **Returns:** `Partial<ScenvConfig>`.

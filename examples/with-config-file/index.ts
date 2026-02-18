@@ -6,7 +6,7 @@
  *   cd examples/with-config-file && pnpm start
  *
  * Override with env:
- *   SCENV_PROMPT=never SCENV_ADD_CONTEXTS=extra pnpm start
+ *   SCENV_PROMPT=never SCENV_ADD_CONTEXT=extra pnpm start
  */
 import { loadConfig, scenv } from "scenv";
 
@@ -14,7 +14,7 @@ async function main() {
   const config = loadConfig();
   console.log("\nLoaded from scenv.config.json (and env):");
   console.log("  root:", config.root);
-  console.log("  contexts:", config.contexts);
+  console.log("  context:", config.context);
   console.log("  prompt:", config.prompt);
   console.log("  ignoreEnv:", config.ignoreEnv);
   console.log("  shouldSavePrompt:", config.shouldSavePrompt);

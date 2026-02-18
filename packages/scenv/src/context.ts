@@ -5,7 +5,7 @@ import {
   readdirSync,
   statSync,
 } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, isAbsolute } from "node:path";
 import { loadConfig } from "./config.js";
 import { log, logConfigLoaded } from "./log.js";
 
@@ -67,7 +67,7 @@ export function discoverContextPaths(
 
 /**
  * Loads key-value pairs from a single context file. Used when resolving @context:key references.
- * Does not depend on config.contexts or ignoreContext; the context file is read if it exists
+ * Does not depend on config.context or ignoreContext; the context file is read if it exists
  * under the config root.
  *
  * @param contextName - Name of the context (e.g. "prod", "dev") — file is contextName.context.json.
@@ -104,12 +104,12 @@ export function getContext(
 }
 
 /**
- * Loads and merges context values from the current config. Respects {@link ScenvConfig.contexts}
+ * Loads and merges context values from the current config. Respects {@link ScenvConfig.context}
  * order and {@link ScenvConfig.ignoreContext}. Each context file is a JSON object of string
  * key-value pairs; later contexts overwrite earlier for the same key. Used during variable
  * resolution (set > env > context > default).
  *
- * @returns A flat record of key → string value. Empty if ignoreContext is true or no contexts loaded.
+ * @returns A flat record of key → string value. Empty if ignoreContext is true or no context loaded.
  */
 export function getMergedContextValues(): Record<string, string> {
   const config = loadConfig();
@@ -118,7 +118,7 @@ export function getMergedContextValues(): Record<string, string> {
   const root = config.root ?? process.cwd();
   const paths = discoverContextPaths(root);
   const out: Record<string, string> = {};
-  for (const contextName of config.contexts ?? []) {
+  for (const contextName of config.context ?? []) {
     const filePath = paths.get(contextName);
     if (!filePath) {
       log("warn", `context "${contextName}" not found (no *.context.json)`);
@@ -147,7 +147,8 @@ export function getMergedContextValues(): Record<string, string> {
 
 /**
  * Returns the file path used for a context name when saving. If that context was already
- * discovered under config.root, returns its path; otherwise returns root/contextName.context.json.
+ * discovered under config.root, returns its path; otherwise uses config.contextDir (if set)
+ * or root as the directory, then contextName.context.json.
  *
  * @param contextName - Name of the context (e.g. "dev", "prod").
  * @returns Absolute path to the context JSON file.
@@ -158,7 +159,12 @@ export function getContextWritePath(contextName: string): string {
   const paths = discoverContextPaths(root);
   const existing = paths.get(contextName);
   if (existing) return existing;
-  return join(root, `${contextName}${CONTEXT_SUFFIX}`);
+  const saveDir = config.contextDir
+    ? isAbsolute(config.contextDir)
+      ? config.contextDir
+      : join(root, config.contextDir)
+    : root;
+  return join(saveDir, `${contextName}${CONTEXT_SUFFIX}`);
 }
 
 /**

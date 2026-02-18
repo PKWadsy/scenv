@@ -17,7 +17,7 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 configure({
   root: __dirname,
-  contexts: ["saved"],
+  context: ["saved"],
   prompt: "never",
   saveContextTo: "ask",
   callbacks: {

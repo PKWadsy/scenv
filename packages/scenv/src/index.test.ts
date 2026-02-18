@@ -21,7 +21,7 @@ describe("index", () => {
     expect(typeof getCallbacks).toBe("function");
     const config = loadConfig();
     expect(config).toHaveProperty("root");
-    expect(config).toHaveProperty("contexts");
+    expect(config).toHaveProperty("context");
     const cb = getCallbacks();
     expect(typeof cb.defaultPrompt).toBe("function");
     expect(typeof cb.onAskWhetherToSave).toBe("function");

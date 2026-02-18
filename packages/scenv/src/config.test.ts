@@ -27,7 +27,7 @@ describe("config", () => {
   it("loadConfig returns root and defaults when no file", () => {
     const config = loadConfig(tmpDir);
     expect(config.root).toBe(tmpDir);
-    expect(config.contexts).toEqual([]);
+    expect(config.context).toEqual([]);
     expect(config.prompt).toBeUndefined();
   });
 
@@ -35,13 +35,13 @@ describe("config", () => {
     writeFileSync(
       join(tmpDir, "scenv.config.json"),
       JSON.stringify({
-        contexts: ["prod"],
+        context: ["prod"],
         prompt: "fallback",
         ignoreEnv: true,
       })
     );
     const config = loadConfig(tmpDir);
-    expect(config.contexts).toEqual(["prod"]);
+    expect(config.context).toEqual(["prod"]);
     expect(config.prompt).toBe("fallback");
     expect(config.ignoreEnv).toBe(true);
   });
@@ -49,33 +49,33 @@ describe("config", () => {
   it("configure merges programmatic config with precedence over file", () => {
     writeFileSync(
       join(tmpDir, "scenv.config.json"),
-      JSON.stringify({ contexts: ["file"], prompt: "never" })
+      JSON.stringify({ context: ["file"], prompt: "never" })
     );
     configure({ prompt: "always", root: tmpDir });
     const config = loadConfig(tmpDir);
     expect(config.prompt).toBe("always");
-    expect(config.contexts).toEqual(["file"]);
+    expect(config.context).toEqual(["file"]);
   });
 
-  it("contexts replace: programmatic contexts wins", () => {
+  it("context replace: programmatic context wins", () => {
     writeFileSync(
       join(tmpDir, "scenv.config.json"),
-      JSON.stringify({ contexts: ["file"] })
+      JSON.stringify({ context: ["file"] })
     );
-    configure({ contexts: ["prog"], root: tmpDir });
+    configure({ context: ["prog"], root: tmpDir });
     const config = loadConfig(tmpDir);
-    expect(config.contexts).toEqual(["prog"]);
+    expect(config.context).toEqual(["prog"]);
   });
 
-  it("addContexts merges with file contexts", () => {
+  it("addContext merges with file context", () => {
     writeFileSync(
       join(tmpDir, "scenv.config.json"),
-      JSON.stringify({ contexts: ["file-a"] })
+      JSON.stringify({ context: ["file-a"] })
     );
-    configure({ addContexts: ["prog-b"], root: tmpDir });
+    configure({ addContext: ["prog-b"], root: tmpDir });
     const config = loadConfig(tmpDir);
-    expect(config.contexts).toContain("file-a");
-    expect(config.contexts).toContain("prog-b");
+    expect(config.context).toContain("file-a");
+    expect(config.context).toContain("prog-b");
   });
 
   it("env SCENV_PROMPT and SCENV_IGNORE_ENV overlay file", () => {
@@ -92,6 +92,19 @@ describe("config", () => {
     delete process.env.SCENV_IGNORE_ENV;
   });
 
+  it("loadConfig reads contextDir from file and env", () => {
+    writeFileSync(
+      join(tmpDir, "scenv.config.json"),
+      JSON.stringify({ contextDir: "envs" })
+    );
+    const config = loadConfig(tmpDir);
+    expect(config.contextDir).toBe("envs");
+    process.env.SCENV_CONTEXT_DIR = "custom-dir";
+    const config2 = loadConfig(tmpDir);
+    expect(config2.contextDir).toBe("custom-dir");
+    delete process.env.SCENV_CONTEXT_DIR;
+  });
+
   it("resetConfig clears programmatic config", () => {
     configure({ prompt: "always", root: tmpDir });
     resetConfig();
@@ -102,7 +115,7 @@ describe("config", () => {
   it("loadConfigFile returns {} for invalid JSON", () => {
     writeFileSync(join(tmpDir, "scenv.config.json"), "not valid json {");
     const config = loadConfig(tmpDir);
-    expect(config.contexts).toEqual([]);
+    expect(config.context).toEqual([]);
     expect(config.prompt).toBeUndefined();
   });
 

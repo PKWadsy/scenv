@@ -26,10 +26,10 @@ Example `prod.context.json`:
 
 The **context list** is the ordered set of context names that scenv loads and merges. It is built from:
 
-- **Replace:** `contexts: ["a", "b"]` (or `--context a,b` or `SCENV_CONTEXT=a,b`) replaces the entire list with the given names.
-- **Merge:** `addContexts: ["c"]` (or `--add-context c` or `SCENV_ADD_CONTEXTS=c`) appends names to the existing list.
+- **Replace:** `context: ["a", "b"]` (or `--context a,b` or `SCENV_CONTEXT=a,b`) replaces the entire list with the given names.
+- **Merge:** `addContext: ["c"]` (or `--add-context c` or `SCENV_ADD_CONTEXT=c`) appends names to the existing list.
 
-Precedence for defining the list: programmatic over env over file. So if the file has `contexts: ["file"]` and you call `configure({ contexts: ["prog"] })`, the effective list is `["prog"]`.
+Precedence for defining the list: programmatic over env over file. So if the file has `context: ["file"]` and you call `configure({ context: ["prog"] })`, the effective list is `["prog"]`.
 
 For each variable key, scenv looks up the value in the **merged** context map: it loads each context file in the list order and overwrites the map with that file's entries. So **later contexts override earlier ones** for the same key.
 
@@ -79,7 +79,7 @@ for (const [name, path] of paths) {
 
 When you call `variable.save()` or when saving after a prompt (see [Saving](SAVING.md)), scenv writes to a context file. The target context is determined by `saveContextTo`:
 
-- If it is a string (e.g. `"my-saves"`), that context is used. The file path is the one from discovery, or `{root}/{contextName}.context.json` if the context is new.
+- If it is a string (e.g. `"my-saves"`), that context is used. The file path is the one from discovery, or—for a new context—`{contextDir}/{contextName}.context.json` if **`contextDir`** is set (relative to root or absolute), otherwise `{root}/{contextName}.context.json`.
 - If it is `"ask"`, the `onAskContext` callback is called so your app can ask the user which context to use (or create a new name).
 
 The file is updated by merging the new key-value pair with the existing JSON and writing it back.

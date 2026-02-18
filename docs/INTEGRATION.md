@@ -85,8 +85,8 @@ Variable-level `prompt` overrides `defaultPrompt`. Then `SCENV_SAVE_PROMPT=ask` 
 
 Typical setup:
 
-1. **Default** – `scenv.config.json` in the project with `contexts`, `prompt`, etc.
-2. **Environment** – CI or shell sets `SCENV_PROMPT=never`, `SCENV_ADD_CONTEXTS=prod`, etc.
+1. **Default** – `scenv.config.json` in the project with `context`, `prompt`, etc.
+2. **Environment** – CI or shell sets `SCENV_PROMPT=never`, `SCENV_ADD_CONTEXT=prod`, etc.
 3. **CLI** – App calls `configure(parseScenvArgs(process.argv.slice(2)))` so `--set`, `--context`, and other flags override.
 
 Variable definitions stay the same; only the merged config changes how resolution and saving behave.

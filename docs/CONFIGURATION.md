@@ -18,14 +18,15 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `contexts` | `string[]` | Replace the context list with this array. Contexts are loaded in order; see [Contexts](CONTEXTS.md). |
-| `addContexts` | `string[]` | Append these context names to the existing list (ignored if `contexts` is set in the same layer). |
+| `context` | `string[]` | Replace the context list with this array. Context files are loaded in order; see [Contexts](CONTEXTS.md). |
+| `addContext` | `string[]` | Append these context names to the existing list (ignored if `context` is set in the same layer). |
 | `prompt` | `"always"` \| `"never"` \| `"fallback"` \| `"no-env"` | When to prompt for a variable value; see [Resolution](RESOLUTION.md#prompt-modes). |
 | `ignoreEnv` | `boolean` | If `true`, environment variables are not used during resolution. |
 | `ignoreContext` | `boolean` | If `true`, context files are not used during resolution. |
 | `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. Values can use context references: `@context:key` (see [Resolution](RESOLUTION.md#context-references-contextkey)). |
 | `shouldSavePrompt` | `"always"` \| `"never"` \| `"ask"` | After a prompt: `never` = don't save, `always` = save without asking, `ask` = call onAskWhetherToSave (save if true). See [Saving](SAVING.md). |
 | `saveContextTo` | `"ask"` \| `string` | Where to save when writing a variable: a context name, or `"ask"` to use the callback. |
+| `contextDir` | `string` | Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. |
 | `root` | `string` | Directory used as root for config and context search (optional). |
 | `logLevel` | `"none"` \| `"trace"` \| `"debug"` \| `"info"` \| `"warn"` \| `"error"` | Logging level; default is `none` (no logs). Logs go to stderr. |
 
@@ -33,7 +34,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 
 ```json
 {
-  "contexts": ["dev", "prod"],
+  "context": ["dev", "prod"],
   "prompt": "fallback",
   "ignoreEnv": false,
   "shouldSavePrompt": "ask",
@@ -49,20 +50,21 @@ Any of the config keys above can be set via environment variables. The mapping i
 
 | Env variable | Config key | Notes |
 |--------------|------------|--------|
-| `SCENV_CONTEXT` | `contexts` | Comma-separated list. Replaces context list. |
-| `SCENV_ADD_CONTEXTS` | `addContexts` | Comma-separated list. Merged with existing contexts. |
+| `SCENV_CONTEXT` | `context` | Comma-separated list. Replaces context list. |
+| `SCENV_ADD_CONTEXT` | `addContext` | Comma-separated list. Merged with existing context list. |
 | `SCENV_PROMPT` | `prompt` | `always`, `never`, `fallback`, `no-env`. |
 | `SCENV_IGNORE_ENV` | `ignoreEnv` | `1`, `true`, or `yes` → true. |
 | `SCENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
 | `SCENV_SAVE_PROMPT` | `shouldSavePrompt` | `always`, `never`, `ask`. |
 | `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Context name or `ask`. |
+| `SCENV_CONTEXT_DIR` | `contextDir` | Directory path (relative to root or absolute). |
 | `SCENV_LOG_LEVEL` | `logLevel` | `none`, `trace`, `debug`, `info`, `warn`, `error`. |
 
 Examples:
 
 ```bash
 export SCENV_PROMPT=always
-export SCENV_ADD_CONTEXTS=prod,staging
+export SCENV_ADD_CONTEXT=prod,staging
 export SCENV_IGNORE_ENV=1
 ```
 
@@ -82,7 +84,7 @@ You can also pass a partial config and callbacks:
 
 ```ts
 configure({
-  contexts: ["prod"],
+  context: ["prod"],
   prompt: "never",
   set: { api_url: "https://custom.example.com" },
   callbacks: {
@@ -98,7 +100,7 @@ You can call `configure()` multiple times; each call **merges** (shallow) with t
 
 ## Loading config: `loadConfig()`
 
-`loadConfig(root?)` returns the fully merged config (file ← env ← programmatic). You rarely need to call it directly for variable resolution (scenv does that internally), but it is useful to inspect the effective config or to get `root` and `contexts` for context discovery.
+`loadConfig(root?)` returns the fully merged config (file ← env ← programmatic). You rarely need to call it directly for variable resolution (scenv does that internally), but it is useful to inspect the effective config or to get `root` and `context` for context discovery.
 
 - **root** – If you pass `loadConfig("/path/to/project")`, that path is used as the starting directory when searching for `scenv.config.json`. The directory that contains `scenv.config.json` (if found) is stored as `config.root`; otherwise `root` (or `process.cwd()`) is used.
-- **contexts** – The final merged context list (replace vs add is resolved; see [Contexts](CONTEXTS.md)).
+- **context** – The final merged context list (replace vs add is resolved; see [Contexts](CONTEXTS.md)).

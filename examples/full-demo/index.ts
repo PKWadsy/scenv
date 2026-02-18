@@ -68,7 +68,7 @@ async function main() {
 
   console.log("── Config (file + env + CLI merge) ──");
   console.log("  root:", root);
-  console.log("  contexts:", config.contexts?.join(", ") ?? "[]");
+  console.log("  context:", config.context?.join(", ") ?? "[]");
   console.log("  prompt:", config.prompt ?? "(default: fallback)");
   console.log("  ignoreEnv:", config.ignoreEnv ?? false);
   console.log("  ignoreContext:", config.ignoreContext ?? false);

@@ -33,7 +33,7 @@ const debug = scenv("Debug", {
 
 async function main() {
   const config = loadConfig();
-  console.log("\nContext order:", config.contexts?.join(" → "));
+  console.log("\nContext order:", config.context?.join(" → "));
   console.log("Merged context map:", getMergedContextValues());
   console.log("");
 

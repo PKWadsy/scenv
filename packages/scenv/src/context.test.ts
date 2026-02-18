@@ -18,7 +18,7 @@ describe("context", () => {
     resetConfig();
     tmpDir = join(tmpdir(), `scenv-ctx-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
-    configure({ root: tmpDir, contexts: [] });
+    configure({ root: tmpDir, context: [] });
   });
 
   afterEach(() => {
@@ -54,7 +54,7 @@ describe("context", () => {
       join(tmpDir, "b.context.json"),
       JSON.stringify({ bar: "from-b" })
     );
-    configure({ root: tmpDir, contexts: ["a", "b"] });
+    configure({ root: tmpDir, context: ["a", "b"] });
     const values = getMergedContextValues();
     expect(values.foo).toBe("from-a");
     expect(values.bar).toBe("from-b");
@@ -62,13 +62,13 @@ describe("context", () => {
 
   it("getMergedContextValues returns {} when ignoreContext", () => {
     writeFileSync(join(tmpDir, "prod.context.json"), '{"x":"y"}');
-    configure({ root: tmpDir, contexts: ["prod"], ignoreContext: true });
+    configure({ root: tmpDir, context: ["prod"], ignoreContext: true });
     const values = getMergedContextValues();
     expect(values).toEqual({});
   });
 
   it("writeToContext creates file and getMergedContextValues reads it", () => {
-    configure({ root: tmpDir, contexts: ["myctx"] });
+    configure({ root: tmpDir, context: ["myctx"] });
     writeToContext("myctx", "api_url", "https://api.example.com");
     const values = getMergedContextValues();
     expect(values.api_url).toBe("https://api.example.com");
@@ -79,13 +79,28 @@ describe("context", () => {
     expect(path).toBe(join(tmpDir, "newcontext.context.json"));
   });
 
+  it("getContextWritePath uses contextDir when set (relative)", () => {
+    configure({ root: tmpDir, contextDir: "envs" });
+    const path = getContextWritePath("saved");
+    expect(path).toBe(join(tmpDir, "envs", "saved.context.json"));
+  });
+
+  it("getContextWritePath uses existing discovered path over contextDir", () => {
+    const sub = join(tmpDir, "existing");
+    mkdirSync(sub, { recursive: true });
+    writeFileSync(join(sub, "myctx.context.json"), "{}");
+    configure({ root: tmpDir, contextDir: "envs" });
+    const path = getContextWritePath("myctx");
+    expect(path).toBe(join(sub, "myctx.context.json"));
+  });
+
   it("getMergedContextValues skips context file with invalid JSON", () => {
     writeFileSync(join(tmpDir, "bad.context.json"), "not json");
     writeFileSync(
       join(tmpDir, "good.context.json"),
       JSON.stringify({ key: "value" })
     );
-    configure({ root: tmpDir, contexts: ["bad", "good"] });
+    configure({ root: tmpDir, context: ["bad", "good"] });
     const values = getMergedContextValues();
     expect(values.key).toBe("value");
   });
@@ -102,7 +117,7 @@ describe("context", () => {
         nested: { x: 1 },
       })
     );
-    configure({ root: tmpDir, contexts: ["mixed"] });
+    configure({ root: tmpDir, context: ["mixed"] });
     const values = getMergedContextValues();
     expect(values).toEqual({ str: "ok" });
   });
