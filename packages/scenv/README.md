@@ -28,9 +28,9 @@ const apiUrl = scenv("API URL", {
   default: "http://localhost:4000",
 });
 
-const url = await apiUrl.get();         // throws if missing or invalid
-const result = await apiUrl.safeGet();  // { success, value? } | { success: false, error? }
-await apiUrl.save();                    // write current value to a context file
+const url = await apiUrl.get(); // throws if missing or invalid
+const result = await apiUrl.safeGet(); // { success, value? } | { success: false, error? }
+await apiUrl.save(); // write current value to a context file
 ```
 
 ## Resolution order
@@ -46,21 +46,21 @@ Prompting (when to ask the user) is controlled by config `prompt`: `always` | `n
 
 ## Optional integrations
 
-| Package | Purpose |
-|--------|--------|
-| [scenv-zod](https://www.npmjs.com/package/scenv-zod) | `validator(zodSchema)` for type-safe validation and coercion. |
-| [scenv-inquirer](https://www.npmjs.com/package/scenv-inquirer) | `prompt()` and callbacks for interactive prompts. |
+| Package                                                        | Purpose                                                       |
+| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| [scenv-zod](https://www.npmjs.com/package/scenv-zod)           | `validator(zodSchema)` for type-safe validation and coercion. |
+| [scenv-inquirer](https://www.npmjs.com/package/scenv-inquirer) | `prompt()` and callbacks for interactive prompts.             |
 
 ## Documentation
 
-Full docs (config, contexts, resolution, saving, API) live in the [monorepo](https://github.com/PKWadsy/senv):
+Full docs (config, contexts, resolution, saving, API) live in the [monorepo](https://github.com/PKWadsy/scenv):
 
-- [Configuration](https://github.com/PKWadsy/senv/blob/main/docs/CONFIGURATION.md)
-- [Contexts](https://github.com/PKWadsy/senv/blob/main/docs/CONTEXTS.md)
-- [Resolution](https://github.com/PKWadsy/senv/blob/main/docs/RESOLUTION.md)
-- [Saving](https://github.com/PKWadsy/senv/blob/main/docs/SAVING.md)
-- [API reference](https://github.com/PKWadsy/senv/blob/main/docs/API.md)
-- [Integration (scenv-zod, scenv-inquirer)](https://github.com/PKWadsy/senv/blob/main/docs/INTEGRATION.md)
+- [Configuration](https://github.com/PKWadsy/scenv/blob/main/docs/CONFIGURATION.md)
+- [Contexts](https://github.com/PKWadsy/scenv/blob/main/docs/CONTEXTS.md)
+- [Resolution](https://github.com/PKWadsy/scenv/blob/main/docs/RESOLUTION.md)
+- [Saving](https://github.com/PKWadsy/scenv/blob/main/docs/SAVING.md)
+- [API reference](https://github.com/PKWadsy/scenv/blob/main/docs/API.md)
+- [Integration (scenv-zod, scenv-inquirer)](https://github.com/PKWadsy/scenv/blob/main/docs/INTEGRATION.md)
 
 ## License
 
