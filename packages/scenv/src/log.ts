@@ -35,20 +35,45 @@ export function resetLogState(): void {
   configLoadedLogged = false;
 }
 
+const CONFIG_LOG_KEYS: (keyof ScenvConfig)[] = [
+  "root", "context", "prompt", "ignoreEnv", "ignoreContext",
+  "set", "shouldSavePrompt", "saveContextTo", "contextDir", "logLevel",
+];
+
+/** Serializes config for logging. Omits undefined; addContext is excluded (merged into context). */
+function configForLog(config: ScenvConfig): Record<string, unknown> {
+  return Object.fromEntries(
+    CONFIG_LOG_KEYS.filter((k) => config[k] !== undefined).map((k) => [k, config[k]])
+  );
+}
+
 /**
- * Internal: logs config loaded once per process when log level is info or higher.
+ * Internal: logs config loaded once per process. At debug level logs full effective config;
+ * at info level logs key operational settings (root, context, prompt, save, contextDir).
  * @internal
  */
-export function logConfigLoaded(config: Pick<ScenvConfig, "root" | "context">): void {
+export function logConfigLoaded(config: ScenvConfig): void {
   if (configLoadedLogged) return;
-  if (getLevelNum() < LEVEL_NUM.info) return;
   configLoadedLogged = true;
-  log(
-    "info",
-    "config loaded",
-    "root=" + (config.root ?? "(cwd)"),
-    "context=" + JSON.stringify(config.context ?? [])
-  );
+  const levelNum = LEVEL_NUM[config.logLevel ?? "none"];
+
+  if (levelNum >= LEVEL_NUM.info) {
+    const parts: string[] = [
+      "root=" + (config.root ?? "(cwd)"),
+      "context=" + JSON.stringify(config.context ?? []),
+    ];
+    if (config.prompt !== undefined) parts.push("prompt=" + config.prompt);
+    if (config.ignoreEnv === true) parts.push("ignoreEnv=true");
+    if (config.ignoreContext === true) parts.push("ignoreContext=true");
+    if (config.saveContextTo !== undefined) parts.push("saveContextTo=" + config.saveContextTo);
+    if (config.contextDir !== undefined) parts.push("contextDir=" + config.contextDir);
+    if (config.shouldSavePrompt !== undefined) parts.push("shouldSavePrompt=" + config.shouldSavePrompt);
+    log("info", "config loaded", parts.join(" "));
+  }
+
+  if (levelNum >= LEVEL_NUM.debug) {
+    log("debug", "config (full)", JSON.stringify(configForLog(config)));
+  }
 }
 
 /**
