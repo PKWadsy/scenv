@@ -16,19 +16,35 @@ The first step that yields a value wins. If none do, there is no raw value; then
 
 ---
 
-## Context references: `@context:key`
+## Env and context references
 
-After a value is chosen from set, env, context, default, or prompt, scenv checks whether it matches the syntax **`@<context>:<key>`**. If it does, scenv looks up that **key** in that **context** file (e.g. `prod.context.json` for `@prod:…`) and uses that value instead. This applies everywhere: set overrides, environment variables, merged context values, variable **default**, and prompt return values.
+After a value is chosen from set, env, context, default, or prompt, scenv resolves **env references** first, then **context references**.
+
+### Env references: `$VAR` and `${VAR}`
+
+Any **`$VAR`** or **`${VAR}`** in the value is replaced by `process.env[VAR]`. Unset variables become an empty string. This applies in set overrides, env values, context file values, defaults, and prompt return values. Multiple refs in one string are expanded (e.g. `https://$HOST:$PORT`).
+
+### Context references: `@context` and `@context:key`
+
+After env expansion, two forms are supported:
+
+- **`@<context>:<key>`** – Use the value at **key** in that **context** (e.g. `@prod:core_server_url` → value of `core_server_url` in `prod.context.json`).
+- **`@<context>`** – Use the value at the **current variable’s key** in that context. For example, a variable with `key: "url"` and value `@prod` resolves to the value of `url` in `prod.context.json` (same as `@prod:url`).
+
+Context refs apply everywhere: set overrides, environment variables, merged context values, variable **default**, and prompt return values.
 
 Examples:
 
 - `--set api_url=@prod:core_server_url` – use the value of `core_server_url` from `prod.context.json`.
-- `API_URL=@prod:core_server_url` – same, from the environment.
-- A context file can store `"api_url": "@prod:core_server_url"`; that reference is resolved when the variable is read.
-- A variable default can be `default: "@prod:core_server_url"`.
-- A prompt callback can return `"@prod:core_server_url"` and it will be resolved.
+- `--set url=@prod` – use the value of `url` from `prod.context.json` (variable key is `url`).
+- `API_URL=@prod:core_server_url` – same as first, from the environment.
+- A context file can store `"api_url": "@prod"`; that resolves to `api_url` in `prod.context.json`.
+- A variable default can be `default: "@prod:core_server_url"` or `default: "@prod"` (latter uses the variable’s key in prod).
+- A prompt callback can return `"@prod:core_server_url"` or `"@prod"` and it will be resolved.
+- `--set url=$SOME_URL` – use the value of the `SOME_URL` environment variable.
+- A context file can store `"api_url": "$EXTERNAL_API_URL"`; that is expanded from the environment.
 
-References are resolved recursively (e.g. `@prod:a` → `@staging:b` → `"final"`) up to a safe depth. If the context is not found (no `{context}.context.json`) or the key is not in that context, resolution **throws** so you fail fast. The context file is discovered under the config **root** (same as other context files); `ignoreContext` does not prevent resolving explicit `@context:key` references.
+References are resolved recursively (e.g. `@prod:a` → `@staging:b` → `"final"`) up to a safe depth. If the context is not found (no `{context}.context.json`) or the key is not in that context, resolution **throws** so you fail fast. The context file is discovered under the config **root** (same as other context files); `ignoreContext` does not prevent resolving these references.
 
 ---
 

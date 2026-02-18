@@ -2,34 +2,70 @@ import { loadConfig, getCallbacks } from "./config.js";
 import { getMergedContextValues, getContext, writeToContext } from "./context.js";
 import { log, logConfigLoaded } from "./log.js";
 
-/** Matches @<context>:<key> for context-reference resolution. */
-const CONTEXT_REF_REGEX = /^@([^:]+):(.+)$/;
+/** Matches @<context>:<key> for explicit context and key. */
+const CONTEXT_REF_FULL_REGEX = /^@([^:]+):(.+)$/;
+/** Matches @<context> only; key is the current variable's key. */
+const CONTEXT_REF_SHORT_REGEX = /^@([^:]+)$/;
+/** Matches $VAR or ${VAR} for env var substitution. */
+const ENV_REF_REGEX = /\$([A-Za-z_][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})/g;
 const MAX_CONTEXT_REF_DEPTH = 10;
 
 /**
- * If the string matches @<context>:<key>, resolve it from that context file (with recursion up to MAX_CONTEXT_REF_DEPTH).
- * Throws if the context is not found or the key is not in that context. Otherwise returns the string as-is.
+ * Replaces $VAR and ${VAR} in a string with process.env[VAR]. Unset vars become empty string.
  */
-function resolveContextReference(raw: string, depth = 0): string {
+function expandEnvReferences(str: string): string {
+  return str.replace(ENV_REF_REGEX, (_, name: string) => {
+    const key = name.startsWith("{") ? name.slice(1, -1) : name;
+    return process.env[key] ?? "";
+  });
+}
+
+/**
+ * Resolves context and env references in a string.
+ * - $VAR or ${VAR} – replaced by process.env[VAR] (unset → empty string).
+ * - @<context>:<key> – value at that key in that context.
+ * - @<context> – value at the current variable's key in that context (currentKey must be provided).
+ * Env expansion runs first, then context refs. Recurses up to MAX_CONTEXT_REF_DEPTH. Throws if context not found or key missing.
+ */
+function resolveContextReference(
+  raw: string,
+  currentKey: string | undefined,
+  depth = 0
+): string {
   if (depth >= MAX_CONTEXT_REF_DEPTH) {
     throw new Error(
       `Context reference resolution exceeded max depth (${MAX_CONTEXT_REF_DEPTH}): possible circular reference`
     );
   }
-  const match = raw.match(CONTEXT_REF_REGEX);
-  if (!match) return raw;
-  const [, contextName, refKey] = match;
+  const afterEnv = expandEnvReferences(raw);
+  let contextName: string;
+  let refKey: string;
+  const fullMatch = afterEnv.match(CONTEXT_REF_FULL_REGEX);
+  if (fullMatch) {
+    [, contextName, refKey] = fullMatch;
+  } else {
+    const shortMatch = afterEnv.match(CONTEXT_REF_SHORT_REGEX);
+    if (!shortMatch) return afterEnv;
+    contextName = shortMatch[1];
+    if (currentKey === undefined) {
+      throw new Error(
+        `Context reference @${contextName} (short form) cannot be resolved without a variable key. Use @${contextName}:<key> to specify a key.`
+      );
+    }
+    refKey = currentKey;
+  }
   const ctx = getContext(contextName);
   const resolved = ctx[refKey];
   if (resolved === undefined) {
     const hasContext = Object.keys(ctx).length > 0;
+    const displayRef = refKey === currentKey ? `@${contextName}` : `@${contextName}:${refKey}`;
     const msg = hasContext
-      ? `Context reference @${contextName}:${refKey} could not be resolved: key "${refKey}" is not defined in context "${contextName}".`
-      : `Context reference @${contextName}:${refKey} could not be resolved: context "${contextName}" not found (no ${contextName}.context.json).`;
+      ? `Context reference ${displayRef} could not be resolved: key "${refKey}" is not defined in context "${contextName}".`
+      : `Context reference ${displayRef} could not be resolved: context "${contextName}" not found (no ${contextName}.context.json).`;
     log("error", msg);
     throw new Error(msg);
   }
-  return resolveContextReference(resolved, depth + 1);
+  return resolveContextReference(resolved, currentKey, depth + 1);
 }
 
 /**
@@ -181,7 +217,7 @@ export function scenv<T>(
     log("trace", `resolveRaw: checking set for key=${key}`);
     if (config.set?.[key] !== undefined) {
       log("trace", `resolveRaw: set hit key=${key}`);
-      const raw = resolveContextReference(config.set[key]);
+      const raw = resolveContextReference(config.set[key], key);
       return { raw, source: "set" };
     }
     if (!config.ignoreEnv) {
@@ -189,7 +225,7 @@ export function scenv<T>(
       const envVal = process.env[envKey];
       if (envVal !== undefined && envVal !== "") {
         log("trace", "resolveRaw: env hit");
-        const raw = resolveContextReference(envVal);
+        const raw = resolveContextReference(envVal, key);
         return { raw, source: "env" };
       }
     }
@@ -198,7 +234,7 @@ export function scenv<T>(
       const ctx = getMergedContextValues();
       if (ctx[key] !== undefined) {
         log("trace", `resolveRaw: context hit key=${key}`);
-        const raw = resolveContextReference(ctx[key]);
+        const raw = resolveContextReference(ctx[key], key);
         return { raw, source: "context" };
       }
     }
@@ -245,7 +281,7 @@ export function scenv<T>(
       effectiveDefault === undefined
         ? undefined
         : (typeof effectiveDefault === "string"
-            ? resolveContextReference(effectiveDefault)
+            ? resolveContextReference(effectiveDefault, key)
             : effectiveDefault) as T | undefined;
     let wasPrompted = false;
     let value: T;
@@ -264,7 +300,7 @@ export function scenv<T>(
       let promptedValue = (await Promise.resolve(fn(name, defaultForPrompt as T))) as T;
       value =
         typeof promptedValue === "string"
-          ? (resolveContextReference(promptedValue) as T)
+          ? (resolveContextReference(promptedValue, key) as T)
           : promptedValue;
       wasPrompted = true;
       resolvedFrom = "prompt";

@@ -90,7 +90,7 @@ Returns the merged context key-value map (string keys and values) for the curren
 
 ### `getContext(contextName, root?)`
 
-Loads key-value pairs from a **single** context file (e.g. `prod.context.json`). Used internally when resolving **context references** `@context:key`; you can call it to read one context’s values.
+Loads key-value pairs from a **single** context file (e.g. `prod.context.json`). Used internally when resolving **context references** `@context` and `@context:key`; you can call it to read one context’s values.
 
 - **contextName** (string) – Name of the context (file is `{contextName}.context.json`).
 - **root** (string, optional) – Directory to search for context files. If omitted, uses `loadConfig().root`.
@@ -99,9 +99,15 @@ Loads key-value pairs from a **single** context file (e.g. `prod.context.json`).
 
 ---
 
-### Context references: `@context:key`
+### Env and context references
 
-Any resolved string value (from set, env, context, default, or prompt) that matches the syntax **`@<context>:<key>`** is replaced by the value of **key** in that **context** file before use. If the context file is not found or the key is missing, resolution **throws** (fail fast). See [Resolution](RESOLUTION.md#context-references-contextkey).
+Any resolved string value (from set, env, context, default, or prompt) is expanded:
+
+- **`$VAR`** or **`${VAR}`** – replaced by `process.env[VAR]` (unset → empty string).
+- **`@<context>:<key>`** – value of **key** in that **context** file.
+- **`@<context>`** – value of the **current variable’s key** in that context (e.g. variable with key `url` and value `@prod` → value of `url` in `prod.context.json`).
+
+Env expansion runs first, then context refs. If a context file is not found or the key is missing, resolution **throws** (fail fast). See [Resolution](RESOLUTION.md#context-references-contextkey).
 
 ---
 

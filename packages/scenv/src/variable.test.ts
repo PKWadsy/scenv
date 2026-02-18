@@ -473,5 +473,106 @@ describe("variable", () => {
       const value = await v.get();
       expect(value).toBe("https://final.example.com");
     });
+
+    it("resolves @context (short form) using variable key", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ url: "https://prod.example.com" })
+      );
+      configure({ set: { url: "@prod" }, root: tmpDir });
+      const v = scenv("URL", { key: "url" });
+      const value = await v.get();
+      expect(value).toBe("https://prod.example.com");
+    });
+
+    it("resolves @prod:core_url explicitly when key differs from variable key", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ core_url: "https://core.example.com", url: "https://other.example.com" })
+      );
+      configure({ set: { url: "@prod:core_url" }, root: tmpDir });
+      const v = scenv("URL", { key: "url" });
+      const value = await v.get();
+      expect(value).toBe("https://core.example.com");
+    });
+
+    it("resolves @context short form from env and context", async () => {
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ api_url: "https://from-prod.example.com" })
+      );
+      writeFileSync(join(tmpDir, "dev.context.json"), JSON.stringify({ api_url: "@prod" }));
+      configure({ ignoreContext: false, context: ["dev"], root: tmpDir });
+      const v = scenv("API URL", { key: "api_url" });
+      const value = await v.get();
+      expect(value).toBe("https://from-prod.example.com");
+    });
+
+    it("throws when @context short form but key not in context", async () => {
+      writeFileSync(join(tmpDir, "prod.context.json"), JSON.stringify({ other_key: "x" }));
+      configure({ set: { api_url: "@prod" }, root: tmpDir });
+      const v = scenv("API URL", { key: "api_url" });
+      await expect(v.get()).rejects.toThrow(/key "api_url" is not defined in context "prod"/);
+    });
+  });
+
+  describe("$ env var resolution", () => {
+    it("resolves $VAR from set override", async () => {
+      process.env.SOME_URL = "https://from-env.example.com";
+      configure({ set: { url: "$SOME_URL" }, root: tmpDir });
+      const v = scenv("URL", { key: "url" });
+      const value = await v.get();
+      expect(value).toBe("https://from-env.example.com");
+      delete process.env.SOME_URL;
+    });
+
+    it("resolves $VAR from default", async () => {
+      process.env.DEFAULT_HOST = "api.example.com";
+      configure({ root: tmpDir });
+      const v = scenv("Host", { key: "host", default: "$DEFAULT_HOST" });
+      const value = await v.get();
+      expect(value).toBe("api.example.com");
+      delete process.env.DEFAULT_HOST;
+    });
+
+    it("resolves ${VAR} brace syntax", async () => {
+      process.env.BRACED_VAR = "brace-value";
+      configure({ set: { key: "${BRACED_VAR}" }, root: tmpDir });
+      const v = scenv("Key", { key: "key" });
+      const value = await v.get();
+      expect(value).toBe("brace-value");
+      delete process.env.BRACED_VAR;
+    });
+
+    it("unset $VAR becomes empty string", async () => {
+      configure({ set: { url: "$UNSET_VAR" }, root: tmpDir });
+      const v = scenv("URL", { key: "url" });
+      const value = await v.get();
+      expect(value).toBe("");
+    });
+
+    it("resolves $VAR then @context when env holds a context ref", async () => {
+      process.env.REF = "@prod:api_url";
+      writeFileSync(
+        join(tmpDir, "prod.context.json"),
+        JSON.stringify({ api_url: "https://chained.example.com" })
+      );
+      configure({ set: { url: "$REF" }, root: tmpDir });
+      const v = scenv("URL", { key: "url" });
+      const value = await v.get();
+      expect(value).toBe("https://chained.example.com");
+      delete process.env.REF;
+    });
+
+    it("expands multiple $ refs in one value", async () => {
+      process.env.HOST = "api.example.com";
+      process.env.PORT = "443";
+      configure({ set: { url: "https://$HOST:$PORT" }, root: tmpDir });
+      const v = scenv("URL", { key: "url" });
+      const value = await v.get();
+      expect(value).toBe("https://api.example.com:443");
+      delete process.env.HOST;
+      delete process.env.PORT;
+    });
   });
 });

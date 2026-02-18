@@ -71,7 +71,7 @@ for (const [name, path] of paths) {
 
 ## Reading a single context: getContext()
 
-`getContext(contextName, root?)` loads key-value pairs from one context file (e.g. `prod.context.json`). It does not depend on the configured context list or `ignoreContext`. Scenv uses it when resolving **context references** (see [Resolution – Context references](RESOLUTION.md#context-references-contextkey)): any value that looks like `@<context>:<key>` is replaced by the value of that key in that context. You can call `getContext` yourself to inspect or reuse a single context’s values.
+`getContext(contextName, root?)` loads key-value pairs from one context file (e.g. `prod.context.json`). It does not depend on the configured context list or `ignoreContext`. Scenv uses it when resolving **context references** (see [Resolution – Context references](RESOLUTION.md#context-references-contextkey)): any value that looks like `@<context>` or `@<context>:<key>` is replaced by the value from that context (short form uses the variable’s key). You can call `getContext` yourself to inspect or reuse a single context’s values.
 
 ---
 

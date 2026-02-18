@@ -23,7 +23,7 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 | `prompt` | `"always"` \| `"never"` \| `"fallback"` \| `"no-env"` | When to prompt for a variable value; see [Resolution](RESOLUTION.md#prompt-modes). |
 | `ignoreEnv` | `boolean` | If `true`, environment variables are not used during resolution. |
 | `ignoreContext` | `boolean` | If `true`, context files are not used during resolution. |
-| `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. Values can use context references: `@context:key` (see [Resolution](RESOLUTION.md#context-references-contextkey)). |
+| `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. Values can use context references: `@context` or `@context:key` (see [Resolution](RESOLUTION.md#context-references-contextkey)). |
 | `shouldSavePrompt` | `"always"` \| `"never"` \| `"ask"` | After a prompt: `never` = don't save, `always` = save without asking, `ask` = call onAskWhetherToSave (save if true). See [Saving](SAVING.md). |
 | `saveContextTo` | `"ask"` \| `string` | Where to save when writing a variable: a context name, or `"ask"` to use the callback. |
 | `contextDir` | `string` | Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. |
