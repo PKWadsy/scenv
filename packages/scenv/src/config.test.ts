@@ -92,19 +92,6 @@ describe("config", () => {
     delete process.env.SCENV_IGNORE_ENV;
   });
 
-  it("loadConfig reads contextDir from file and env", () => {
-    writeFileSync(
-      join(tmpDir, "scenv.config.json"),
-      JSON.stringify({ contextDir: "envs" })
-    );
-    const config = loadConfig(tmpDir);
-    expect(config.contextDir).toBe("envs");
-    process.env.SCENV_CONTEXT_DIR = "custom-dir";
-    const config2 = loadConfig(tmpDir);
-    expect(config2.contextDir).toBe("custom-dir");
-    delete process.env.SCENV_CONTEXT_DIR;
-  });
-
   it("resetConfig clears programmatic config", () => {
     configure({ prompt: "always", root: tmpDir });
     resetConfig();
@@ -134,6 +121,19 @@ describe("config", () => {
     expect(config.prompt).toBe("no-env");
     delete process.env.SCENV_SAVE_CONTEXT_TO;
     delete process.env.SCENV_PROMPT;
+  });
+
+  it("loadConfig reads saveMode from file and env", () => {
+    writeFileSync(
+      join(tmpDir, "scenv.config.json"),
+      JSON.stringify({ saveMode: "prompts-only" })
+    );
+    const config = loadConfig(tmpDir);
+    expect(config.saveMode).toBe("prompts-only");
+    process.env.SCENV_SAVE_MODE = "all";
+    const config2 = loadConfig(tmpDir);
+    expect(config2.saveMode).toBe("all");
+    delete process.env.SCENV_SAVE_MODE;
   });
 
   it("getCallbacks() returns default callbacks when none configured", () => {

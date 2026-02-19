@@ -18,16 +18,20 @@ import { tmpdir } from "node:os";
 
 describe("context", () => {
   let tmpDir: string;
+  let origCwd: string;
 
   beforeEach(() => {
     resetConfig();
+    origCwd = process.cwd();
     tmpDir = join(tmpdir(), `scenv-ctx-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
+    process.chdir(tmpDir);
     configure({ root: tmpDir, context: [] });
   });
 
   afterEach(() => {
     try {
+      process.chdir(origCwd);
       rmSync(tmpDir, { recursive: true });
     } catch {
       // ignore
@@ -79,24 +83,20 @@ describe("context", () => {
     expect(values.api_url).toBe("https://api.example.com");
   });
 
-  it("getContextWritePath returns path for new context under root", () => {
+  it("getContextWritePath returns path for new context under project root", () => {
     const path = getContextWritePath("newcontext");
     expect(path).toBe(join(tmpDir, "newcontext.context.json"));
   });
 
-  it("getContextWritePath uses contextDir when set (relative)", () => {
-    configure({ root: tmpDir, contextDir: "envs" });
-    const path = getContextWritePath("saved");
-    expect(path).toBe(join(tmpDir, "envs", "saved.context.json"));
-  });
-
-  it("getContextWritePath uses existing discovered path over contextDir", () => {
+  it("getContextWritePath uses existing discovered path when context is under cwd", () => {
     const sub = join(tmpDir, "existing");
     mkdirSync(sub, { recursive: true });
     writeFileSync(join(sub, "myctx.context.json"), "{}");
-    configure({ root: tmpDir, contextDir: "envs" });
+    configure({ root: tmpDir });
     const path = getContextWritePath("myctx");
-    expect(path).toBe(join(sub, "myctx.context.json"));
+    expect(path).toContain("existing");
+    expect(path).toContain("myctx.context.json");
+    expect(path.endsWith("existing/myctx.context.json") || path.endsWith(join("existing", "myctx.context.json"))).toBe(true);
   });
 
   it("getMergedContextValues skips context file with invalid JSON", () => {
@@ -149,6 +149,21 @@ describe("context", () => {
     expect(values).toEqual({});
   });
 
+  it("getContext falls back to project root when not found under cwd", () => {
+    const projectRoot = join(tmpDir, "project");
+    const subdir = join(projectRoot, "sub");
+    mkdirSync(subdir, { recursive: true });
+    writeFileSync(
+      join(projectRoot, "blah.context.json"),
+      JSON.stringify({ api_url: "https://api.blah.com" })
+    );
+    configure({ root: projectRoot });
+    process.chdir(subdir);
+    const values = getContext("blah");
+    process.chdir(origCwd);
+    expect(values.api_url).toBe("https://api.blah.com");
+  });
+
   it("getInMemoryContext and setInMemoryContext and resetInMemoryContext", () => {
     expect(getInMemoryContext()).toEqual({});
     setInMemoryContext("k1", "v1");
@@ -159,7 +174,7 @@ describe("context", () => {
     expect(getInMemoryContext()).toEqual({});
   });
 
-  it("getMergedContextValues includes saveContextTo when set", () => {
+  it("getMergedContextValues uses only context list, not saveContextTo", () => {
     const savePath = join(tmpDir, "save-ctx.context.json");
     writeFileSync(savePath, JSON.stringify({ from_save: "saved-value" }));
     configure({ root: tmpDir, context: ["a"], saveContextTo: join(tmpDir, "save-ctx") });
@@ -173,7 +188,8 @@ describe("context", () => {
     resetConfig();
     configure({ root: tmpDir, context: [], saveContextTo: join(tmpDir, "save-ctx") });
     const values2 = getMergedContextValues();
-    expect(values2.from_save).toBe("saved-value");
+    expect(values2.from_save).toBeUndefined();
+    expect(values2).toEqual({});
     resetConfig();
   });
 

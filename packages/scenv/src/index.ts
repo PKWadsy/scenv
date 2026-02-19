@@ -8,6 +8,7 @@ export {
   type ScenvCallbacks,
   type DefaultPromptFn,
   type PromptMode,
+  type SaveMode,
   type LogLevel,
 } from "./config.js";
 export { resetLogState } from "./log.js";

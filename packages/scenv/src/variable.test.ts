@@ -2,18 +2,21 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { configure, resetConfig } from "./config.js";
 import { resetInMemoryContext } from "./context.js";
 import { scenv } from "./variable.js";
-import { writeFileSync, mkdirSync, rmSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 describe("variable", () => {
   let tmpDir: string;
+  let origCwd: string;
 
   beforeEach(() => {
     resetConfig();
     resetInMemoryContext();
+    origCwd = process.cwd();
     tmpDir = join(tmpdir(), `scenv-var-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
+    process.chdir(tmpDir);
     configure({
       root: tmpDir,
       context: [],
@@ -25,6 +28,7 @@ describe("variable", () => {
 
   afterEach(() => {
     try {
+      process.chdir(origCwd);
       rmSync(tmpDir, { recursive: true });
     } catch {
       // ignore
@@ -345,6 +349,54 @@ describe("variable", () => {
     const content = readFileSync(ctxPath, "utf-8");
     const data = JSON.parse(content);
     expect(data.no_callback).toBe("v");
+  });
+
+  it("saveMode all (default) writes every resolved value to saveContextTo", async () => {
+    configure({
+      saveContextTo: "out",
+      saveMode: "all",
+      context: [],
+      ignoreEnv: false,
+      ignoreContext: true,
+    });
+    process.env.ALL_MODE_KEY = "from-env";
+    const v = scenv("All Mode", { key: "all_mode_key", env: "ALL_MODE_KEY" });
+    await v.get();
+    const ctxPath = join(tmpDir, "out.context.json");
+    const data = JSON.parse(readFileSync(ctxPath, "utf-8"));
+    expect(data.all_mode_key).toBe("from-env");
+    delete process.env.ALL_MODE_KEY;
+  });
+
+  it("saveMode prompts-only writes only when user was prompted", async () => {
+    configure({
+      saveContextTo: "out",
+      saveMode: "prompts-only",
+      context: [],
+      ignoreEnv: false,
+      ignoreContext: true,
+    });
+    process.env.PROMPTS_ONLY_KEY = "from-env";
+    const v = scenv("Prompts Only", { key: "prompts_only_key", env: "PROMPTS_ONLY_KEY" });
+    await v.get();
+    const ctxPath = join(tmpDir, "out.context.json");
+    expect(existsSync(ctxPath)).toBe(false);
+    resetInMemoryContext();
+    let promptCount = 0;
+    const v2 = scenv("Prompts Only Prompt", {
+      key: "prompted_key",
+      prompt: () => {
+        promptCount++;
+        return "from-prompt";
+      },
+    });
+    configure({ prompt: "always" });
+    await v2.get();
+    expect(promptCount).toBe(1);
+    const data = JSON.parse(readFileSync(ctxPath, "utf-8"));
+    expect(data.prompted_key).toBe("from-prompt");
+    expect(data.prompts_only_key).toBeUndefined();
+    delete process.env.PROMPTS_ONLY_KEY;
   });
 
   describe("@context:key resolution", () => {

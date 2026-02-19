@@ -27,7 +27,7 @@ Creates a scenv variable.
 Merges config and optional callbacks into the programmatic layer. Precedence: programmatic over env over file. You can call `configure()` multiple times; each call is **merged (shallow)** with the previous programmatic config and callbacks—later values overwrite earlier for the same key; objects like `set` and `callbacks` are replaced, not deep-merged.
 
 - **partial** – `Partial<ScenvConfig>` and optionally `{ callbacks: ScenvCallbacks }`.
-  - Config keys: `context`, `addContext`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `saveContextTo`, `contextDir`, `root`, `logLevel`.
+  - Config keys: `context`, `addContext`, `prompt`, `ignoreEnv`, `ignoreContext`, `set`, `saveContextTo`, `saveMode`, `root`, `logLevel`.
   - **callbacks**: `{ defaultPrompt? }`. `defaultPrompt` is used when a variable has no `prompt` option (variable’s `prompt` overrides it). 
 ---
 
@@ -65,6 +65,7 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 
 **Supported flags:**
 
+- `--root path` – Project root (config search and where new context files are saved). Relative paths are resolved from cwd.
 - `--context a,b,c` – Set context list (replace).
 - `--add-context a,b` – Add context names.
 - `--prompt always|never|fallback|no-env`
@@ -73,7 +74,7 @@ Parses an argv slice (e.g. `process.argv.slice(2)`) into a partial config for `c
 - `--set key=value` (multiple allowed)
 - `--set=key=value`
 - `--save-context-to pathOrName` – Path or context name (without `.context.json`) where to save variables.
-- `--context-dir path` – Directory to save context files to by default.
+- `--save-mode all|prompts-only` – When to write to saveContextTo during get(); default is `all`.
 - `--log-level level` / `--log level` / `--log=level` – Log level: `none` (default), `trace`, `debug`, `info`, `warn`, `error`.
 
 **Returns:** `Partial<ScenvConfig>`.
@@ -91,7 +92,7 @@ Returns the merged context key-value map (string keys and values) for the curren
 Loads key-value pairs from a **single** context file (e.g. `prod.context.json`). Used internally when resolving **context references** `@context` and `@context:key`; you can call it to read one context’s values.
 
 - **contextName** (string) – Name of the context (file is `{contextName}.context.json`).
-- **root** (string, optional) – Directory to search for context files. If omitted, uses `loadConfig().root`.
+- **root** (string, optional) – Directory to search for context files. If omitted, uses `process.cwd()`.
 
 **Returns:** `Record<string, string>` from that context file. Empty if the file is not found or invalid.
 

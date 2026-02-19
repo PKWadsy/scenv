@@ -1,6 +1,6 @@
 {
   "name": "scenv",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Environment and context variables with runtime-configurable resolution",
   "repository": {
     "type": "git",

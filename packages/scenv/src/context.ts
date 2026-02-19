@@ -94,20 +94,33 @@ export function discoverContextPaths(
 /**
  * Loads key-value pairs from a single context file. Used when resolving @context:key references.
  * Does not depend on config.context or ignoreContext; the context file is read if it exists
- * under the config root.
+ * under the search directory.
  *
  * @param contextName - Name of the context (e.g. "prod", "dev") — file is contextName.context.json.
- * @param root - Optional root directory to search. If omitted, uses loadConfig().root.
+ * @param root - Optional directory to search. If omitted, searches from process.cwd() then from project root (config.root) if the context is not found under cwd.
  * @returns A flat record of key → string value from that context file. Empty if file not found or invalid.
  */
 export function getContext(
   contextName: string,
   root?: string
 ): Record<string, string> {
-  const config = loadConfig();
-  const searchRoot = root ?? config.root ?? process.cwd();
-  const paths = discoverContextPaths(searchRoot);
-  const filePath = paths.get(contextName);
+  let filePath: string | undefined;
+  if (root !== undefined) {
+    const paths = discoverContextPaths(root);
+    filePath = paths.get(contextName);
+  } else {
+    const cwd = process.cwd();
+    const paths = discoverContextPaths(cwd);
+    filePath = paths.get(contextName);
+    if (!filePath) {
+      const config = loadConfig();
+      const projectRoot = config.root ?? cwd;
+      if (projectRoot !== cwd) {
+        const rootPaths = discoverContextPaths(projectRoot);
+        filePath = rootPaths.get(contextName);
+      }
+    }
+  }
   if (!filePath) {
     log("trace", `getContext: context "${contextName}" not found`);
     return {};
@@ -130,9 +143,10 @@ export function getContext(
 }
 
 /**
- * Loads and merges context values from the current config. If {@link ScenvConfig.saveContextTo}
- * is set, that context (file path or name) is loaded first; then {@link ScenvConfig.context}
- * order. Respects {@link ScenvConfig.ignoreContext}. Later contexts overwrite earlier for the same key.
+ * Loads and merges context values from the current config from {@link ScenvConfig.context} only.
+ * saveContextTo is not used for resolution; it is only a write target. To use the same context
+ * for reading, add it explicitly via context or addContext.
+ * Respects {@link ScenvConfig.ignoreContext}. Later contexts overwrite earlier for the same key.
  * Used during variable resolution (set > env > in-memory > merged context > default).
  *
  * @returns A flat record of key → string value. Empty if ignoreContext is true or no context loaded.
@@ -141,17 +155,9 @@ export function getMergedContextValues(): Record<string, string> {
   const config = loadConfig();
   logConfigLoaded(config);
   if (config.ignoreContext) return {};
-  const root = config.root ?? process.cwd();
-  const paths = discoverContextPaths(root);
+  const searchRoot = process.cwd();
+  const paths = discoverContextPaths(searchRoot);
   const out: Record<string, string> = {};
-  if (config.saveContextTo) {
-    const savePath = resolveSaveContextPath(config.saveContextTo);
-    const saveCtx = getContextAtPath(savePath);
-    for (const [k, v] of Object.entries(saveCtx)) out[k] = v;
-    if (Object.keys(saveCtx).length > 0) {
-      log("debug", `saveContextTo "${config.saveContextTo}" loaded keys=${JSON.stringify(Object.keys(saveCtx))}`);
-    }
-  }
   for (const contextName of config.context ?? []) {
     const filePath = paths.get(contextName);
     if (!filePath) {
@@ -182,7 +188,7 @@ export function getMergedContextValues(): Record<string, string> {
 /**
  * Returns the file path used for a context name or path when saving.
  * - If contextName is path-like (absolute or contains path separator), returns that path with .context.json appended if not already present.
- * - Otherwise, if that context was already discovered under config.root, returns its path; else uses config.contextDir (if set) or root.
+ * - Otherwise, if that context was already discovered under cwd, returns its path; else saves under project root (config.root or cwd).
  *
  * @param contextName - Context name (e.g. "dev", "prod") or file path without suffix (e.g. "/path/to/myfile" → myfile.context.json).
  * @returns Absolute path to the context JSON file.
@@ -194,16 +200,11 @@ export function getContextWritePath(contextName: string): string {
       : contextName + CONTEXT_SUFFIX;
   }
   const config = loadConfig();
-  const root = config.root ?? process.cwd();
-  const paths = discoverContextPaths(root);
+  const paths = discoverContextPaths(process.cwd());
   const existing = paths.get(contextName);
   if (existing) return existing;
-  const saveDir = config.contextDir
-    ? isAbsolute(config.contextDir)
-      ? config.contextDir
-      : join(root, config.contextDir)
-    : root;
-  return join(saveDir, `${contextName}${CONTEXT_SUFFIX}`);
+  const projectRoot = config.root ?? process.cwd();
+  return join(projectRoot, `${contextName}${CONTEXT_SUFFIX}`);
 }
 
 /**

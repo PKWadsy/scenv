@@ -21,6 +21,13 @@ export const LOG_LEVELS = ["none", "trace", "debug", "info", "warn", "error"] as
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
 /**
+ * When to write resolved values to saveContextTo during get().
+ * - `"all"` – Save every resolved variable (from set, env, context, or prompt). Useful for re-running with the same values.
+ * - `"prompts-only"` – Save only when the user was prompted. Default is `"all"`.
+ */
+export type SaveMode = "all" | "prompts-only";
+
+/**
  * Full scenv configuration. Built from file (scenv.config.json), environment (SCENV_*),
  * and programmatic config (configure()), with programmatic > env > file precedence.
  * All properties are optional; defaults apply when omitted.
@@ -40,9 +47,9 @@ export interface ScenvConfig {
   set?: Record<string, string>;
   /** Optional path or context name (without .context.json) where to save resolved values. If set, all saves go here and this context is used before prompting. If unset, values are saved to an in-memory context only (same process). */
   saveContextTo?: string;
-  /** Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. */
-  contextDir?: string;
-  /** Root directory for config file search and context discovery. Default is cwd or the directory containing scenv.config.json. */
+  /** When to write to saveContextTo during get(): "all" (default) saves every resolved variable; "prompts-only" saves only when the user was prompted. */
+  saveMode?: SaveMode;
+  /** Project root: where to search for scenv.config.json and where new context files are saved. Defaults to the directory containing scenv.config.json (when found) or cwd. Context files are discovered from cwd. */
   root?: string;
   /** Logging level. Default is `"none"`. Messages go to stderr. */
   logLevel?: LogLevel;
@@ -57,7 +64,7 @@ const envKeyMap: Record<string, keyof ScenvConfig> = {
   SCENV_IGNORE_ENV: "ignoreEnv",
   SCENV_IGNORE_CONTEXT: "ignoreContext",
   SCENV_SAVE_CONTEXT_TO: "saveContextTo",
-  SCENV_CONTEXT_DIR: "contextDir",
+  SCENV_SAVE_MODE: "saveMode",
   SCENV_LOG_LEVEL: "logLevel",
 };
 
@@ -131,8 +138,10 @@ function configFromEnv(): Partial<ScenvConfig> {
         (out as Record<string, PromptMode>)[configKey] = v as PromptMode;
     } else if (configKey === "saveContextTo") {
       out.saveContextTo = val as string;
-    } else if (configKey === "contextDir") {
-      out.contextDir = val;
+    } else if (configKey === "saveMode") {
+      const v = val.toLowerCase();
+      if (v === "all" || v === "prompts-only")
+        (out as Record<string, SaveMode>)[configKey] = v as SaveMode;
     } else if (configKey === "logLevel") {
       const v = val.toLowerCase();
       if (LOG_LEVELS.includes(v as LogLevel)) out.logLevel = v as LogLevel;
@@ -179,8 +188,11 @@ function loadConfigFile(configDir: string): Partial<ScenvConfig> {
       out.set = parsed.set as Record<string, string>;
     if (typeof parsed.saveContextTo === "string")
       out.saveContextTo = parsed.saveContextTo;
-    if (typeof parsed.contextDir === "string") out.contextDir = parsed.contextDir;
-    else if (typeof parsed.contextsDir === "string") out.contextDir = parsed.contextsDir;
+    if (
+      typeof parsed.saveMode === "string" &&
+      ["all", "prompts-only"].includes(parsed.saveMode)
+    )
+      out.saveMode = parsed.saveMode as SaveMode;
     if (typeof parsed.root === "string") out.root = parsed.root;
     if (
       typeof parsed.logLevel === "string" &&

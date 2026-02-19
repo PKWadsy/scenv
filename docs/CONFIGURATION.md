@@ -12,7 +12,7 @@ Later layers never overwrite earlier ones for the same key; programmatic always 
 
 ## Config file: `scenv.config.json`
 
-Place `scenv.config.json` in your project root (or any directory). Scenv searches upward from `process.cwd()` (or from the configured `root`) until it finds a directory containing `scenv.config.json`; that directory becomes the config root and the context search root unless overridden.
+Place `scenv.config.json` in your project root (or any directory). Scenv searches upward from `process.cwd()` (or from the configured `root`) until it finds a directory containing `scenv.config.json`; that directory becomes the **project root**. Context files are discovered from the current working directory; new context files are saved under the project root.
 
 ### Supported keys
 
@@ -24,9 +24,9 @@ Place `scenv.config.json` in your project root (or any directory). Scenv searche
 | `ignoreEnv` | `boolean` | If `true`, environment variables are not used during resolution. |
 | `ignoreContext` | `boolean` | If `true`, context files are not used during resolution. |
 | `set` | `Record<string, string>` | Override values by key. Same effect as `--set key=value`. Values can use context references: `@context` or `@context:key` (see [Resolution](RESOLUTION.md#context-references-contextkey)). |
-| `saveContextTo` | `string` | Optional. Path or context name (without `.context.json`) where to save resolved values. If set, all saves go here and this context is used when resolving (before prompting). If unset, values are saved to in-memory only. See [Saving](SAVING.md). |
-| `contextDir` | `string` | Directory to save context files to when the context is not already discovered. Relative to root unless absolute. If unset, new context files are saved under root. |
-| `root` | `string` | Directory used as root for config and context search (optional). |
+| `saveContextTo` | `string` | Optional. Path or context name (without `.context.json`) where to save resolved values. If set, saves are written to that file (see `saveMode`). It is not used for resolution unless you add it to the context list. If unset, values are saved to in-memory only. See [Saving](SAVING.md). |
+| `saveMode` | `"all"` \| `"prompts-only"` | When to write to `saveContextTo` during `get()`: `"all"` (default) writes every resolved value; `"prompts-only"` writes only when the user was prompted. |
+| `root` | `string` | Project root: where to search for `scenv.config.json` and where new context files are saved. Defaults to the directory containing the config file (when found) or cwd. Context files are discovered from cwd. |
 | `logLevel` | `"none"` \| `"trace"` \| `"debug"` \| `"info"` \| `"warn"` \| `"error"` | Logging level; default is `none` (no logs). Logs go to stderr. |
 
 ### Example
@@ -54,7 +54,7 @@ Any of the config keys above can be set via environment variables. The mapping i
 | `SCENV_IGNORE_ENV` | `ignoreEnv` | `1`, `true`, or `yes` → true. |
 | `SCENV_IGNORE_CONTEXT` | `ignoreContext` | `1`, `true`, or `yes` → true. |
 | `SCENV_SAVE_CONTEXT_TO` | `saveContextTo` | Path or context name (without `.context.json`). |
-| `SCENV_CONTEXT_DIR` | `contextDir` | Directory path (relative to root or absolute). |
+| `SCENV_SAVE_MODE` | `saveMode` | `all` or `prompts-only`. |
 | `SCENV_LOG_LEVEL` | `logLevel` | `none`, `trace`, `debug`, `info`, `warn`, `error`. |
 
 Examples:

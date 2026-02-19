@@ -354,10 +354,11 @@ export function scenv<T>(
       throw new Error(errMsg);
     }
     const final = validated.data;
-    if (wasPrompted) {
-      const config = loadConfig();
-      setInMemoryContext(key, String(final));
-      if (config.saveContextTo) {
+    const config = loadConfig();
+    if (wasPrompted) setInMemoryContext(key, String(final));
+    if (config.saveContextTo) {
+      const saveMode = config.saveMode ?? "all";
+      if (saveMode === "all" || wasPrompted) {
         writeToContext(config.saveContextTo, key, String(final));
         log("info", `Saved key=${key} to saveContextTo ${config.saveContextTo}`);
       }

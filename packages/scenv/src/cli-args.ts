@@ -1,4 +1,6 @@
+import { resolve } from "node:path";
 import type { ScenvConfig } from "./config.js";
+import type { SaveMode } from "./config.js";
 import { LOG_LEVELS, type LogLevel } from "./config.js";
 
 /**
@@ -6,6 +8,7 @@ import { LOG_LEVELS, type LogLevel } from "./config.js";
  * Typical use: `configure(parseScenvArgs(process.argv.slice(2)))`. Unrecognized flags are ignored.
  *
  * Supported flags:
+ * - `--root path` – Project root (where to find scenv.config.json and where new context files are saved). Relative paths are resolved from cwd.
  * - `--context a,b,c` – Set context list (replace).
  * - `--add-context x,y` – Add context names.
  * - `--prompt always|never|fallback|no-env` – Prompt mode.
@@ -13,7 +16,7 @@ import { LOG_LEVELS, type LogLevel } from "./config.js";
  * - `--ignore-context` – Set ignoreContext to true.
  * - `--set key=value` or `--set=key=value` – Add to set overrides (multiple allowed).
  * - `--save-context-to pathOrName` – saveContextTo (path or context name without .context.json).
- * - `--context-dir path` – contextDir (directory to save context files to by default).
+ * - `--save-mode all|prompts-only` – When to write to saveContextTo during get(); default is all.
  * - `--log-level level`, `--log level`, `--log=level` – logLevel.
  *
  * @param argv - Array of CLI arguments (e.g. process.argv.slice(2)).
@@ -24,7 +27,9 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
   let i = 0;
   while (i < argv.length) {
     const arg = argv[i];
-    if (arg === "--context" && argv[i + 1] !== undefined) {
+    if (arg === "--root" && argv[i + 1] !== undefined) {
+      config.root = resolve(argv[++i]);
+    } else if (arg === "--context" && argv[i + 1] !== undefined) {
       config.context = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
     } else if (arg === "--add-context" && argv[i + 1] !== undefined) {
       config.addContext = argv[++i].split(",").map((s) => s.trim()).filter(Boolean);
@@ -46,8 +51,11 @@ export function parseScenvArgs(argv: string[]): Partial<ScenvConfig> {
       }
     } else if (arg === "--save-context-to" && argv[i + 1] !== undefined) {
       config.saveContextTo = argv[++i];
-    } else if (arg === "--context-dir" && argv[i + 1] !== undefined) {
-      config.contextDir = argv[++i];
+    } else if (arg === "--save-mode" && argv[i + 1] !== undefined) {
+      const v = argv[++i].toLowerCase();
+      if (v === "all" || v === "prompts-only") {
+        config.saveMode = v as SaveMode;
+      }
     } else if ((arg === "--log-level" || arg === "--log") && argv[i + 1] !== undefined) {
       const v = argv[++i].toLowerCase() as LogLevel;
       if (LOG_LEVELS.includes(v)) {

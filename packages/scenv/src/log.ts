@@ -37,7 +37,7 @@ export function resetLogState(): void {
 
 const CONFIG_LOG_KEYS: (keyof ScenvConfig)[] = [
   "root", "context", "prompt", "ignoreEnv", "ignoreContext",
-  "set", "saveContextTo", "contextDir", "logLevel",
+  "set", "saveContextTo", "saveMode", "logLevel",
 ];
 
 /** Serializes config for logging. Omits undefined; addContext is excluded (merged into context). */
@@ -49,7 +49,7 @@ function configForLog(config: ScenvConfig): Record<string, unknown> {
 
 /**
  * Internal: logs config loaded once per process. At debug level logs full effective config;
- * at info level logs key operational settings (root, context, prompt, save, contextDir).
+ * at info level logs key operational settings (root, context, prompt, save).
  * @internal
  */
 export function logConfigLoaded(config: ScenvConfig): void {
@@ -66,7 +66,7 @@ export function logConfigLoaded(config: ScenvConfig): void {
     if (config.ignoreEnv === true) parts.push("ignoreEnv=true");
     if (config.ignoreContext === true) parts.push("ignoreContext=true");
     if (config.saveContextTo !== undefined) parts.push("saveContextTo=" + config.saveContextTo);
-    if (config.contextDir !== undefined) parts.push("contextDir=" + config.contextDir);
+    if (config.saveMode !== undefined) parts.push("saveMode=" + config.saveMode);
     log("info", "config loaded", parts.join(" "));
   }
 

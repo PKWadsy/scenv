@@ -1,7 +1,15 @@
 import { describe, it, expect } from "vitest";
+import { resolve } from "node:path";
 import { parseScenvArgs } from "./cli-args.js";
 
 describe("parseScenvArgs", () => {
+  it("parses --root and resolves relative paths", () => {
+    const config = parseScenvArgs(["--root", "/tmp/project"]);
+    expect(config.root).toBe("/tmp/project");
+    const configRel = parseScenvArgs(["--root", "."]);
+    expect(configRel.root).toBe(resolve("."));
+  });
+
   it("parses --context", () => {
     const config = parseScenvArgs(["--context", "prod,dev"]);
     expect(config.context).toEqual(["prod", "dev"]);
@@ -48,9 +56,10 @@ describe("parseScenvArgs", () => {
     expect(config.saveContextTo).toBe("prod");
   });
 
-  it("parses --context-dir", () => {
-    const config = parseScenvArgs(["--context-dir", "envs"]);
-    expect(config.contextDir).toBe("envs");
+  it("parses --save-mode", () => {
+    expect(parseScenvArgs(["--save-mode", "all"]).saveMode).toBe("all");
+    expect(parseScenvArgs(["--save-mode", "prompts-only"]).saveMode).toBe("prompts-only");
+    expect(parseScenvArgs(["--save-mode", "PROMPTS-ONLY"]).saveMode).toBe("prompts-only");
   });
 
   it("returns empty partial for empty argv", () => {
